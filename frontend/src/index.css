@@ -1,0 +1,16 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Make app truly full screen */
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #020617; /* CodeStrom dark */
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
