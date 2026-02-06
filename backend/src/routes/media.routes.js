@@ -1,8 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { protect } = require("../middleware/auth.middleware");
-const roleMiddleware = require("../middleware/role.middleware");
+const { protect, adminOnly } = require("../middleware/auth.middleware");
 
 const {
   uploadMedia,
@@ -21,7 +20,7 @@ router.get("/", getAllMedia);
 router.post(
   "/",
   protect,
-  roleMiddleware("admin"),
+  adminOnly,
   uploadMedia
 );
 
@@ -29,7 +28,7 @@ router.post(
 router.delete(
   "/:id",
   protect,
-  roleMiddleware("admin"),
+  adminOnly,
   deleteMedia
 );
 

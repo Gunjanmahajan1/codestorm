@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import { FaPaperPlane, FaCheck } from "react-icons/fa";
 import "../styles/dashboard.css";
 
 const Discussion = () => {
   const [messages, setMessages] = useState([]);
   const [content, setContent] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
   const chatEndRef = useRef(null);
 
   const token = localStorage.getItem("token");
@@ -19,8 +21,12 @@ const Discussion = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessages(res.data.data || []);
+      setErrorMsg("");
     } catch (err) {
       console.error("Failed to fetch discussion");
+      if (err.response?.status === 403) {
+        setErrorMsg(err.response.data.message);
+      }
     }
   };
 
@@ -46,6 +52,9 @@ const Discussion = () => {
 
       setContent("");
       fetchMessages();
+      setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     } catch (err) {
       console.error("Message send/edit failed");
     }
@@ -102,12 +111,21 @@ const Discussion = () => {
   const groupedMessages =
     Array.isArray(messages) && messages.length > 0
       ? messages.reduce((acc, msg) => {
-          const day = formatDay(msg.createdAt);
-          if (!acc[day]) acc[day] = [];
-          acc[day].push(msg);
-          return acc;
-        }, {})
+        const day = formatDay(msg.createdAt);
+        if (!acc[day]) acc[day] = [];
+        acc[day].push(msg);
+        return acc;
+      }, {})
       : {};
+
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+  /* ... effect for outside click ... */
+  useEffect(() => {
+    const handleClick = () => setOpenMenuId(null);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, []);
 
   /* ---------------- EFFECTS ---------------- */
   useEffect(() => {
@@ -120,37 +138,45 @@ const Discussion = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // REDUCED Auto-scroll: Only on first load or when sending
+  const initialLoadDone = useRef(false);
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!initialLoadDone.current && messages.length > 0) {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      initialLoadDone.current = true;
+    }
   }, [messages]);
 
   /* ---------------- UI ---------------- */
   return (
     <div className="chat-page">
-      <div className="chat-body">
-        {!user && (
-          <p style={{ color: "white", padding: "1rem" }}>
-            Loading discussion...
-          </p>
+      <div className="chat-body" onClick={() => setOpenMenuId(null)}>
+        {errorMsg && (
+          <div style={{
+            color: "#EF4444",
+            padding: "2rem",
+            textAlign: "center",
+            background: "rgba(239, 68, 68, 0.1)",
+            borderRadius: "12px",
+            margin: "2rem"
+          }}>
+            <h3>{errorMsg}</h3>
+            <p>Please check back later or contact an administrator.</p>
+          </div>
         )}
 
         {user &&
+          !errorMsg &&
           Object.keys(groupedMessages).length > 0 &&
           Object.keys(groupedMessages).map((day) => (
-            <div key={day}>
+            <div key={day} style={{ display: "flex", flexDirection: "column" }}>
               <div className="chat-day">{day}</div>
 
               {groupedMessages[day].map((msg) => {
-const isOwn =
-  msg.author && user && msg.author._id === user._id;                
-  const isAdmin = user && user.role === "admin";
+                const isOwn =
+                  msg.author && user && (msg.author._id === user.id || msg.author._id === user._id);
+                const isAdmin = user && user.role === "admin";
                 const canModify = isOwn || isAdmin;
-console.log({
-  isOwn,
-  isAdmin,
-  canModify,
-  msg: msg.content,
-});
 
 
                 return (
@@ -158,38 +184,58 @@ console.log({
                     key={msg._id}
                     className={`chat-row ${isOwn ? "own" : "other"}`}
                   >
-                    <div className="chat-bubble">
-                      <p>{msg.content}</p>
+                    {!isOwn && (
+                      <div className="chat-avatar">
+                        {msg.author?.name ? msg.author.name.charAt(0).toUpperCase() : "?"}
+                      </div>
+                    )}
+                    <div className={`chat-bubble ${msg.role === "admin" ? "admin" : ""}`}>
+                      {(!isOwn || msg.role === "admin") && (
+                        <div className="sender-name">
+                          {!isOwn && msg.author?.name}
+                          {msg.role === "admin" && <span className="admin-badge">Admin</span>}
+                        </div>
+                      )}
 
-                      <div className="chat-meta">
-                        <span>{msg.author?.name}</span>
-                        <span>{formatTime(msg.createdAt)}</span>
+                      <div className="chat-content">
+                        {msg.content}
                       </div>
 
-{canModify && (
-  <div className="chat-actions">
-    <details>
-      <summary className="dots">⋮</summary>
+                      <div className="chat-footer">
+                        <span className="chat-time">{formatTime(msg.createdAt)}</span>
+                      </div>
 
-      <div className="dropdown">
-        {isOwn && (
-          <button
-            onClick={() => {
-              setEditingId(msg._id);
-              setContent(msg.content);
-            }}
-          >
-            Edit
-          </button>
-        )}
-
-        <button onClick={() => deleteMessage(msg._id)}>
-          Delete
-        </button>
-      </div>
-    </details>
-  </div>
-)}
+                      {canModify && (
+                        <div className="chat-actions" onClick={(e) => e.stopPropagation()}>
+                          <div
+                            className="dots"
+                            onClick={() => setOpenMenuId(openMenuId === msg._id ? null : msg._id)}
+                          >
+                            ⋮
+                          </div>
+                          {openMenuId === msg._id && (
+                            <div className="dropdown active">
+                              {isOwn && (
+                                <button
+                                  onClick={() => {
+                                    setEditingId(msg._id);
+                                    setContent(msg.content);
+                                    setOpenMenuId(null);
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                              )}
+                              <button onClick={() => {
+                                deleteMessage(msg._id);
+                                setOpenMenuId(null);
+                              }}>
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -209,8 +255,8 @@ console.log({
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
-          <button onClick={sendMessage}>
-            {editingId ? "Update" : "Send"}
+          <button onClick={sendMessage} title={editingId ? "Update" : "Send"}>
+            {editingId ? <FaCheck /> : <FaPaperPlane />}
           </button>
         </div>
       )}

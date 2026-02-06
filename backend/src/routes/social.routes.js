@@ -11,9 +11,7 @@ const {
   adminOnly,
 } = require("../middleware/auth.middleware");
 
-console.log("protect:", typeof protect);
-console.log("adminOnly:", typeof adminOnly);
-console.log("updateSocialLinks:", typeof updateSocialLinks);
+
 
 router.get("/", getSocialLinks);
 router.put("/", protect, adminOnly, updateSocialLinks);

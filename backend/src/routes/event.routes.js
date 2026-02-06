@@ -45,7 +45,7 @@ router.post(
   "/:id/image",
   protect,
   adminOnly,
-  upload.single("image"),
+  upload.array("images", 10),
   uploadEventImage
 );
 

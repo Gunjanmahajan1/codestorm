@@ -1,21 +1,34 @@
 const express = require("express");
 const router = express.Router();
 
-const { protect } = require("../middleware/auth.middleware");
-const roleMiddleware = require("../middleware/role.middleware");
+const { protect, adminOnly } = require("../middleware/auth.middleware");
 
 const {
   getMessages,
   postMessage,
+  updateMessage,
+  deleteMessage,
   toggleDiscussionStatus,
+  getDiscussionSettings,
 } = require("../controllers/discussion.controller");
 
 /* -------------------- PUBLIC ROUTES -------------------- */
 
 // Get all discussion messages
-router.get("/", getMessages);
+router.get("/", protect, getMessages);
+
+// Get discussion settings
+router.get("/settings", getDiscussionSettings);
 
 /* -------------------- AUTHENTICATED ROUTES -------------------- */
+
+// Enable / disable discussion room (Specific route first)
+router.put(
+  "/toggle",
+  protect,
+  adminOnly,
+  toggleDiscussionStatus
+);
 
 // Post a message (student or admin)
 router.post(
@@ -24,14 +37,16 @@ router.post(
   postMessage
 );
 
-/* -------------------- ADMIN ROUTES -------------------- */
-
-// Enable / disable discussion room
 router.put(
-  "/toggle",
+  "/:id",
   protect,
-  roleMiddleware("admin"),
-  toggleDiscussionStatus
+  updateMessage
+);
+
+router.delete(
+  "/:id",
+  protect,
+  deleteMessage
 );
 
 module.exports = router;

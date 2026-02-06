@@ -43,14 +43,14 @@ const Contests = () => {
     const ics = `
 BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//CodeStrom//Contest Reminder//EN
+PRODID:-//CodeStorm//Contest Reminder//EN
 BEGIN:VEVENT
-UID:${Date.now()}@codestrom
+UID:${Date.now()}@codestorm
 DTSTAMP:${formatICS(new Date())}
 DTSTART:${formatICS(start)}
 DTEND:${formatICS(end)}
 SUMMARY:${contest.title}
-DESCRIPTION:Contest Reminder from CodeStrom
+DESCRIPTION:Contest Reminder from CodeStorm
 LOCATION:${contest.url || ""}
 END:VEVENT
 END:VCALENDAR
@@ -114,20 +114,20 @@ END:VCALENDAR
                   {p.description}
                 </p>
 
-<a
-  href={p.url}
-  target="_blank"
-  rel="noreferrer"
-  className="logout-btn"
-  style={{
-    background: p.color,
-    textAlign: "center",
-    marginTop: "0.6rem",
-    display: "block",
-  }}
->
-  View Contests →
-</a>
+                <a
+                  href={p.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="logout-btn"
+                  style={{
+                    background: p.color,
+                    textAlign: "center",
+                    marginTop: "0.6rem",
+                    display: "block",
+                  }}
+                >
+                  View Contests →
+                </a>
 
               </div>
             </a>
@@ -135,10 +135,10 @@ END:VCALENDAR
         </div>
 
         {/* INTERNAL CONTESTS */}
-        <h2 style={{ marginTop: "2.5rem" }}>📌 CodeStrom Contests</h2>
+        <h2 style={{ marginTop: "2.5rem" }}>📌 CodeStorm Contests</h2>
 
         {contests.length === 0 ? (
-          <p>No contests added by CodeStrom yet.</p>
+          <p>No contests added by CodeStorm yet.</p>
         ) : (
           <div className="card-grid">
             {contests.map((c) => (
@@ -154,7 +154,7 @@ END:VCALENDAR
                 <button
                   className="logout-btn"
                   onClick={() => downloadICS(c)}
-                  style={{ marginTop: "0.5rem"  }}
+                  style={{ marginTop: "0.5rem" }}
                 >
                   Add to Calendar 📅
                 </button>

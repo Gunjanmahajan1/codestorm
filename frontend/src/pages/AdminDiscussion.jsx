@@ -1,28 +1,29 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import { FaPaperPlane, FaCheck, FaTrash, FaLock, FaUnlock } from "react-icons/fa";
 import "../styles/dashboard.css";
 
 const AdminDiscussion = () => {
   const [messages, setMessages] = useState([]);
   const [content, setContent] = useState("");
+  const [editingId, setEditingId] = useState(null);
   const [enabled, setEnabled] = useState(true);
+  const chatEndRef = useRef(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+
   const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
 
-
-  /* -------------------- FETCH DATA -------------------- */
+  /* ---------------- FETCH DATA ---------------- */
   const fetchMessages = async () => {
     try {
       const res = await axios.get(
         "http://localhost:5000/api/discussion",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      setMessages(res.data.data);
+      setMessages(res.data.data || []);
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to load discussion");
+      console.error("Failed to fetch discussion");
     }
   };
 
@@ -37,73 +38,58 @@ const AdminDiscussion = () => {
     }
   };
 
-  const formatTimeAgo = (date) => {
-  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-
-  if (seconds < 60) return "just now";
-
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes} min ago`;
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} hr ago`;
-
-  const days = Math.floor(hours / 24);
-  return `${days} day${days > 1 ? "s" : ""} ago`;
-};
-
-
-  /* -------------------- POST MESSAGE -------------------- */
+  /* ---------------- SEND / EDIT MESSAGE ---------------- */
   const sendMessage = async () => {
     if (!content.trim()) return;
 
     try {
-      await axios.post(
-        "http://localhost:5000/api/discussion",
-        { content },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      if (editingId) {
+        await axios.put(
+          `http://localhost:5000/api/discussion/${editingId}`,
+          { content },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setEditingId(null);
+      } else {
+        await axios.post(
+          "http://localhost:5000/api/discussion",
+          { content },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
       setContent("");
       fetchMessages();
+      setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     } catch (err) {
-      alert(err.response?.data?.message || "Message failed");
+      console.error("Message send/edit failed");
     }
   };
 
-  /* -------------------- DELETE MESSAGE (ADMIN) -------------------- */
+  /* ---------------- DELETE MESSAGE ---------------- */
   const deleteMessage = async (id) => {
     if (!window.confirm("Delete this message?")) return;
 
     try {
       await axios.delete(
         `http://localhost:5000/api/discussion/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchMessages();
-    } catch {
-      alert("Delete failed");
+    } catch (err) {
+      console.error("Delete failed");
     }
   };
 
-  /* -------------------- TOGGLE DISCUSSION -------------------- */
+  /* ---------------- TOGGLE DISCUSSION ---------------- */
   const toggleDiscussion = async () => {
     try {
       const res = await axios.put(
         "http://localhost:5000/api/discussion/toggle",
         {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setEnabled(res.data.data.isEnabled);
     } catch {
@@ -111,75 +97,196 @@ const AdminDiscussion = () => {
     }
   };
 
-  /* -------------------- EFFECT -------------------- */
+  /* ---------------- TIME FORMAT ---------------- */
+  const formatTime = (date) => {
+    const msgTime = new Date(date);
+    const diffMin = Math.floor((Date.now() - msgTime.getTime()) / 60000);
+
+    if (diffMin < 10) {
+      return `${diffMin <= 0 ? 1 : diffMin} min ago`;
+    }
+
+    return msgTime.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  const formatDay = (date) => {
+    const msgDate = new Date(date);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    if (msgDate.toDateString() === today.toDateString()) return "Today";
+    if (msgDate.toDateString() === yesterday.toDateString()) return "Yesterday";
+
+    return msgDate.toLocaleDateString(undefined, {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  /* ---------------- GROUP MESSAGES ---------------- */
+  const groupedMessages =
+    Array.isArray(messages) && messages.length > 0
+      ? messages.reduce((acc, msg) => {
+        const day = formatDay(msg.createdAt);
+        if (!acc[day]) acc[day] = [];
+        acc[day].push(msg);
+        return acc;
+      }, {})
+      : {};
+
+  /* ---------------- EFFECTS ---------------- */
   useEffect(() => {
     fetchMessages();
     fetchSettings();
+
+    const interval = setInterval(() => {
+      fetchMessages();
+      fetchSettings();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  /* -------------------- UI -------------------- */
-  return (
-    <div className="dashboard">
-      <div className="dashboard-content">
-        <h1>Admin Discussion Room</h1>
+  useEffect(() => {
+    const handleClick = () => setOpenMenuId(null);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, []);
 
+  const initialLoadDone = useRef(false);
+  useEffect(() => {
+    if (!initialLoadDone.current && messages.length > 0) {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      initialLoadDone.current = true;
+    }
+  }, [messages]);
+
+  /* ---------------- UI ---------------- */
+  return (
+    <div className="chat-page">
+      {/* ADMIN CONTROL HEADER */}
+      <div className="chat-header-admin">
+        <div className="header-info">
+          <h2>Admin Discussion Room</h2>
+          <span className={`status-badge ${enabled ? "enabled" : "disabled"}`}>
+            {enabled ? "Room Open" : "Room Closed"}
+          </span>
+        </div>
         <button
           onClick={toggleDiscussion}
-          className="logout-btn"
-          style={{
-            background: enabled ? "#DC2626" : "#16A34A",
-            marginBottom: "1rem",
-          }}
+          className={`toggle-btn ${enabled ? "off" : "on"}`}
+          title={enabled ? "Disable Discussion" : "Enable Discussion"}
         >
-          {enabled ? "Disable Discussion" : "Enable Discussion"}
+          {enabled ? <><FaLock /> Disable</> : <><FaUnlock /> Enable</>}
         </button>
+      </div>
 
-        {/* MESSAGE INPUT */}
-        {enabled && (
-          <div className="card" style={{ marginBottom: "1rem" }}>
-            <textarea
-              placeholder="Type a message..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              style={{ width: "100%", padding: "10px" }}
-            />
-            <button
-              onClick={sendMessage}
-              className="logout-btn"
-              style={{ marginTop: "0.5rem" }}
-            >
-              Send
-            </button>
-          </div>
+      <div className="chat-body" onClick={() => setOpenMenuId(null)}>
+        {!user && (
+          <p style={{ color: "white", padding: "1rem" }}>
+            Loading discussion...
+          </p>
         )}
 
-        {/* MESSAGE LIST */}
-        <div className="card-grid">
-          {messages.map((msg) => (
-            <div key={msg._id} className="card">
-              <p>{msg.content}</p>
-<small>
-  — {msg.author?.name} • {formatTimeAgo(msg.createdAt)}
-</small>
+        {user &&
+          Object.keys(groupedMessages).length > 0 &&
+          Object.keys(groupedMessages).map((day) => (
+            <div key={day} style={{ display: "flex", flexDirection: "column" }}>
+              <div className="chat-day">{day}</div>
 
-              <button
-                onClick={() => deleteMessage(msg._id)}
-                style={{
-                  marginTop: "0.5rem",
-                  background: "#DC2626",
-                  color: "#fff",
-                  border: "none",
-                  padding: "6px 10px",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                }}
-              >
-                Delete
-              </button>
+              {groupedMessages[day].map((msg) => {
+                const isOwn =
+                  msg.author && user && (msg.author._id === user.id || msg.author._id === user._id);
+                // In Admin room, admin can delete anyone.
+                const canModify = true;
+
+                return (
+                  <div
+                    key={msg._id}
+                    className={`chat-row ${isOwn ? "own" : "other"}`}
+                  >
+                    {!isOwn && (
+                      <div className="chat-avatar">
+                        {msg.author?.name ? msg.author.name.charAt(0).toUpperCase() : "?"}
+                      </div>
+                    )}
+                    <div className={`chat-bubble ${msg.role === "admin" ? "admin" : ""}`}>
+                      {(!isOwn || msg.role === "admin") && (
+                        <div className="sender-name">
+                          {!isOwn && msg.author?.name}
+                          {msg.role === "admin" && <span className="admin-badge">Admin</span>}
+                        </div>
+                      )}
+
+                      <div className="chat-content">
+                        {msg.content}
+                      </div>
+
+                      <div className="chat-footer">
+                        <span className="chat-time">{formatTime(msg.createdAt)}</span>
+                      </div>
+
+                      {canModify && (
+                        <div className="chat-actions" onClick={(e) => e.stopPropagation()}>
+                          <div
+                            className="dots"
+                            onClick={() => setOpenMenuId(openMenuId === msg._id ? null : msg._id)}
+                          >
+                            ⋮
+                          </div>
+                          {openMenuId === msg._id && (
+                            <div className="dropdown active">
+                              {isOwn && (
+                                <button
+                                  onClick={() => {
+                                    setEditingId(msg._id);
+                                    setContent(msg.content);
+                                    setOpenMenuId(null);
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                              )}
+                              <button onClick={() => {
+                                deleteMessage(msg._id);
+                                setOpenMenuId(null);
+                              }}>
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ))}
-        </div>
+
+        <div ref={chatEndRef} />
       </div>
+
+      {/* INPUT BAR */}
+      {token && (
+        <div className="chat-input-bar">
+          <input
+            type="text"
+            placeholder={enabled ? "Type a message" : "Room is disabled (Admin can still post)"}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+          <button onClick={sendMessage} title={editingId ? "Update" : "Send"}>
+            {editingId ? <FaCheck /> : <FaPaperPlane />}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

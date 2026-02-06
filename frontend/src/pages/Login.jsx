@@ -10,40 +10,40 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError("");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
 
-  try {
-    const res = await axios.post(
-      "http://localhost:5000/api/auth/login",
-      { email, password }
-    );
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        { email, password }
+      );
 
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("role", res.data.user.role);
-localStorage.setItem("user", JSON.stringify(res.data.user));
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("role", res.data.user.role);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
 
 
-    const role = res.data.user.role;
+      const role = res.data.user.role;
 
-    if (role === "admin") {
-      navigate("/dashboard");
-    } else {
-      navigate("/discussion");
+      if (role === "admin") {
+        navigate("/dashboard");
+      } else {
+        navigate("/discussion");
+      }
+    } catch (err) {
+      console.error("Login error:", err.response?.data || err.message);
+      setError(
+        err.response?.data?.message || "Login failed (check console)"
+      );
     }
-  } catch (err) {
-    console.error("Login error:", err.response?.data || err.message);
-    setError(
-      err.response?.data?.message || "Login failed (check console)"
-    );
-  }
-};
+  };
 
   return (
     <div className="login-container">
       <form className="login-card" onSubmit={handleSubmit}>
-        <h2>CodeStrom </h2>
+        <h2>CodeStorm </h2>
 
         {error && <p className="error">{error}</p>}
 
@@ -74,8 +74,12 @@ localStorage.setItem("user", JSON.stringify(res.data.user));
 
         <button type="submit">Login</button>
         <p style={{ marginTop: "1rem", textAlign: "center" }}>
-  <Link to="/forgot-password">Forgot Password?</Link>
-</p>
+          <Link to="/forgot-password">Forgot Password?</Link>
+          <br />
+          <span style={{ fontSize: "0.9rem", color: "#ccc" }}>
+            Don't have an account? <Link to="/signup" style={{ color: "#22c55e" }}>Sign Up</Link>
+          </span>
+        </p>
 
       </form>
     </div>

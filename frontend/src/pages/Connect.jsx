@@ -72,7 +72,7 @@ const Connect = () => {
             >
               <FaInstagram size={28} color="#E1306C" />
               <h3>Instagram</h3>
-              <p>@codestrom</p>
+              <p>@codestorm</p>
             </a>
           )}
 

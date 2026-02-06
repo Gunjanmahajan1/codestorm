@@ -28,7 +28,7 @@ const StudentEvents = () => {
   return (
     <div className="dashboard">
       <div className="dashboard-content">
-        <h1>CodeStrom Events 🚀</h1>
+        <h1>CodeStorm Events 🚀</h1>
         <p>Explore our latest workshops, contests, and tech events.</p>
 
         {loading ? (
@@ -40,7 +40,35 @@ const StudentEvents = () => {
             {events.map((event) => (
               <div className="card" key={event._id}>
                 {/* EVENT IMAGE */}
-                {event.image && (
+                {/* EVENT IMAGE */}
+                {event.images && event.images.length > 0 ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      overflowX: "auto",
+                      scrollSnapType: "x mandatory", // Enable snap scrolling
+                      gap: "0.5rem",
+                      marginBottom: "0.75rem",
+                      borderRadius: "10px",
+                    }}
+                  >
+                    {event.images.map((img, index) => (
+                      <img
+                        key={index}
+                        src={`http://localhost:5000${img}`}
+                        alt={`${event.title} ${index + 1}`}
+                        style={{
+                          width: "100%",
+                          minWidth: "100%", // Take up full card width
+                          scrollSnapAlign: "start", // Snap to start
+                          height: "180px",
+                          objectFit: "cover",
+                          borderRadius: "10px",
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : event.image ? (
                   <img
                     src={`http://localhost:5000${event.image}`}
                     alt={event.title}
@@ -52,7 +80,7 @@ const StudentEvents = () => {
                       marginBottom: "0.75rem",
                     }}
                   />
-                )}
+                ) : null}
 
                 <h3>{event.title}</h3>
                 <p>{event.description}</p>

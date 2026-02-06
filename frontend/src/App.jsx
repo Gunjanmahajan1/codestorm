@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
+import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminEvents from "./pages/AdminEvents";
@@ -15,6 +16,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AdminContests from "./pages/AdminContests";
 import Contests from "./pages/Contests";
+import AdminAbout from "./pages/AdminAbout";
 import { Navigate } from "react-router-dom";
 
 function App() {
@@ -24,7 +26,7 @@ function App() {
 
       <Routes>
         {/* PUBLIC ROUTES */}
-<Route path="/" element={<Navigate to="/events" replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/events" element={<StudentEvents />} />
         <Route path="/about" element={<About />} />
@@ -60,38 +62,47 @@ function App() {
         />
 
         <Route
-  path="/admin/discussion"
-  element={
-    <ProtectedRoute>
-      <AdminDiscussion />
-    </ProtectedRoute>
-  }
-/>
+          path="/admin/discussion"
+          element={
+            <ProtectedRoute>
+              <AdminDiscussion />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-  path="/discussion"
-  element={
-    <ProtectedRoute>
-      <Discussion />
-    </ProtectedRoute>
-  }
-/>
+        <Route
+          path="/discussion"
+          element={
+            <ProtectedRoute>
+              <Discussion />
+            </ProtectedRoute>
+          }
+        />
 
-<Route path="/signup" element={<Signup />} />
+        <Route path="/signup" element={<Signup />} />
 
-<Route path="/forgot-password" element={<ForgotPassword />} />
-<Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-<Route path="/contests" element={<Contests />} />
+        <Route path="/contests" element={<Contests />} />
 
-<Route
-  path="/admin/contests"
-  element={
-    <ProtectedRoute>
-      <AdminContests />
-    </ProtectedRoute>
-  }
-/>
+        <Route
+          path="/admin/contests"
+          element={
+            <ProtectedRoute>
+              <AdminContests />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/about"
+          element={
+            <ProtectedRoute>
+              <AdminAbout />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );

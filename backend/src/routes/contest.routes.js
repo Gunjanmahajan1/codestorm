@@ -8,15 +8,14 @@ const {
   deleteContest,
 } = require("../controllers/contest.controller");
 
-const { protect } = require("../middleware/auth.middleware");
-const roleMiddleware = require("../middleware/role.middleware");
+const { protect, adminOnly } = require("../middleware/auth.middleware");
 
 /* PUBLIC */
 router.get("/", getAllContests);
 
 /* ADMIN */
-router.post("/", protect, roleMiddleware("admin"), createContest);
-router.put("/:id", protect, roleMiddleware("admin"), updateContest);
-router.delete("/:id", protect, roleMiddleware("admin"), deleteContest);
+router.post("/", protect, adminOnly, createContest);
+router.put("/:id", protect, adminOnly, updateContest);
+router.delete("/:id", protect, adminOnly, deleteContest);
 
 module.exports = router;

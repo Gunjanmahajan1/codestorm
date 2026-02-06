@@ -46,7 +46,7 @@ exports.getAllEvents = async (req, res, next) => {
     if (eventType) filter.eventType = eventType;
 
     const events = await Event.find(filter)
-      .sort({ date: -1 })
+      .sort({ createdAt: -1 })
       .populate("createdBy", "name email");
 
     res.status(200).json({
@@ -185,10 +185,10 @@ exports.uploadEventImage = async (req, res) => {
   try {
     const eventId = req.params.id;
 
-    if (!req.file) {
+    if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "No image uploaded",
+        message: "No images uploaded",
       });
     }
 
@@ -200,12 +200,15 @@ exports.uploadEventImage = async (req, res) => {
       });
     }
 
-    event.image = `/uploads/1768284152218-838149948.jpg`;
+    // Append new images to existing ones
+    const newImages = req.files.map((file) => `/uploads/${file.filename}`);
+    event.images.push(...newImages);
+
     await event.save();
 
     res.status(200).json({
       success: true,
-      message: "Image uploaded successfully",
+      message: "Images uploaded successfully",
       data: event,
     });
   } catch (error) {
@@ -223,7 +226,7 @@ exports.getPublishedEvents = async (req, res) => {
     if (year) filter.year = year;
     if (eventType) filter.eventType = eventType;
 
-    const events = await Event.find(filter).sort({ date: -1 });
+    const events = await Event.find(filter).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,

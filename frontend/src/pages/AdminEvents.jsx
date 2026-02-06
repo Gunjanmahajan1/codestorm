@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import "../styles/dashboard.css";
 
@@ -8,7 +8,8 @@ const AdminEvents = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingEventId, setEditingEventId] = useState(null);
-  const [imageFile, setImageFile] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const fileInputRef = useRef(null);
 
 
   const [form, setForm] = useState({
@@ -37,64 +38,70 @@ const AdminEvents = () => {
 
       setEvents(res.data.data || res.data);
       setLoading(false);
-    } 
-      catch (err) {
-  console.error("Failed to fetch events");
-  console.error("STATUS:", err.response?.status);
-  console.error("DATA:", err.response?.data);
-  setLoading(false);
-}
+    }
+    catch (err) {
+      console.error("Failed to fetch events");
+      console.error("STATUS:", err.response?.status);
+      console.error("DATA:", err.response?.data);
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  try {
-    const token = localStorage.getItem("token");
+    try {
+      const token = localStorage.getItem("token");
 
-    if (editingEventId) {
-      // 🔁 EDIT EVENT
-      await axios.put(
-        `http://localhost:5000/api/events/${editingEventId}`,
-        form,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-    } else {
-      // ➕ CREATE EVENT
-      const publishNow = window.confirm(
-        "Do you want to publish this event now?\n\nOK = Publish\nCancel = Save as Draft"
-      );
+      let targetEventId = editingEventId;
 
-      const payload = {
-        ...form,
-        isPublished: publishNow,
-      };
+      if (editingEventId) {
+        // 🔁 EDIT EVENT
+        await axios.put(
+          `http://localhost:5000/api/events/${editingEventId}`,
+          form,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      } else {
+        // ➕ CREATE EVENT
+        const publishNow = window.confirm(
+          "Do you want to publish this event now?\n\nOK = Publish\nCancel = Save as Draft"
+        );
 
-      const res = await axios.post(
-        "http://localhost:5000/api/events",
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        const payload = {
+          ...form,
+          isPublished: publishNow,
+        };
 
-      // 👇 upload image if selected
-      if (imageFile) {
+        const res = await axios.post(
+          "http://localhost:5000/api/events",
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        targetEventId = res.data.data._id;
+      }
+
+      // 👇 upload images if selected (for both Create and Edit)
+      if (targetEventId && imageFiles && imageFiles.length > 0) {
         const formData = new FormData();
-        formData.append("image", imageFile);
+        for (let i = 0; i < imageFiles.length; i++) {
+          formData.append("images", imageFiles[i]);
+        }
 
         await axios.post(
-          `http://localhost:5000/api/events/${res.data.data._id}/image`,
+          `http://localhost:5000/api/events/${targetEventId}/image`,
           formData,
           {
             headers: {
@@ -104,59 +111,59 @@ const handleSubmit = async (e) => {
           }
         );
       }
+
+      // Reset form & edit mode
+      setForm({
+        title: "",
+        description: "",
+        date: "",
+        year: "",
+        location: "",
+        eventType: "",
+        isPublished: true,
+      });
+      setEditingEventId(null);
+      setImageFiles([]);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+
+      fetchEvents();
+    } catch (error) {
+      console.error("Failed to save event");
+      console.error("STATUS:", error.response?.status);
+      console.error("DATA:", error.response?.data);
+
+      alert(
+        error.response?.data?.message ||
+        "Create/Edit failed – check backend route or validation"
+      );
     }
-
-    // Reset form & edit mode
-    setForm({
-      title: "",
-      description: "",
-      date: "",
-      year: "",
-      location: "",
-      eventType: "",
-      isPublished: true,
-    });
-    setEditingEventId(null);
-    setImageFile(null);
-
-    fetchEvents();
-  } catch (error) {
-    console.error("Failed to save event");
-    console.error("STATUS:", error.response?.status);
-    console.error("DATA:", error.response?.data);
-
-    alert(
-      error.response?.data?.message ||
-      "Create/Edit failed – check backend route or validation"
-    );
-  }
-};
+  };
 
   const handleDelete = async (eventId) => {
-  const confirmDelete = window.confirm(
-    "Are you sure you want to delete this event?"
-  );
-
-  if (!confirmDelete) return;
-
-  try {
-    const token = localStorage.getItem("token");
-
-    await axios.delete(
-      `http://localhost:5000/api/events/${eventId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this event?"
     );
 
-    // Refresh events after delete
-    fetchEvents();
-  } catch (error) {
-    console.error("Failed to delete event", error);
-  }
-};
+    if (!confirmDelete) return;
+
+    try {
+      const token = localStorage.getItem("token");
+
+      await axios.delete(
+        `http://localhost:5000/api/events/${eventId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Refresh events after delete
+      fetchEvents();
+    } catch (error) {
+      console.error("Failed to delete event", error);
+    }
+  };
 
 
   // ---------------- EFFECT ----------------
@@ -173,26 +180,26 @@ const handleSubmit = async (e) => {
 
         {/* CREATE EVENT FORM */}
         <form
-          onSubmit={handleSubmit}          
+          onSubmit={handleSubmit}
           className="card"
           style={{ marginTop: "1.5rem" }}
         >
           <h3>{editingEventId ? "Edit Event" : "Create New Event"}</h3>
           {event.imageUrl && (
 
-            
-  <img
-    src={event.imageUrl}
-    alt={event.title}
-    style={{
-      width: "100%",
-      height: "180px",
-      objectFit: "cover",
-      borderRadius: "10px",
-      marginBottom: "0.5rem",
-    }}
-  />
-)}
+
+            <img
+              src={event.imageUrl}
+              alt={event.title}
+              style={{
+                width: "100%",
+                height: "180px",
+                objectFit: "cover",
+                borderRadius: "10px",
+                marginBottom: "0.5rem",
+              }}
+            />
+          )}
 
 
           <input
@@ -224,41 +231,43 @@ const handleSubmit = async (e) => {
           />
 
           <input
-             type="text"
-             name="location"
-             placeholder="Event Location (e.g. Online / Auditorium)"
-             value={form.location}
-             onChange={handleInputChange}
-             required
-             style={{ width: "100%", marginBottom: "1rem", padding: "10px" }}
-            />
+            type="text"
+            name="location"
+            placeholder="Event Location (e.g. Online / Auditorium)"
+            value={form.location}
+            onChange={handleInputChange}
+            required
+            style={{ width: "100%", marginBottom: "1rem", padding: "10px" }}
+          />
 
           <input
-  type="number"
-  name="year"
-  placeholder="Event Year (e.g. 2025)"
-  value={form.year}
-  onChange={handleInputChange}
-  required
-  style={{ width: "100%", marginBottom: "1rem", padding: "10px" }}
-/>
+            type="number"
+            name="year"
+            placeholder="Event Year (e.g. 2025)"
+            value={form.year}
+            onChange={handleInputChange}
+            required
+            style={{ width: "100%", marginBottom: "1rem", padding: "10px" }}
+          />
 
 
-<input
-  type="text"
-  name="eventType"
-  placeholder="Event Type"
-  value={form.eventType}
-  onChange={handleInputChange}
-  required
-  style={{ width: "100%", marginBottom: "1rem", padding: "10px" }}
-/>
-<input
-  type="file"
-  accept="image/*"
-  onChange={(e) => setImageFile(e.target.files[0])}
-  style={{ marginBottom: "1rem" }}
-/>
+          <input
+            type="text"
+            name="eventType"
+            placeholder="Event Type"
+            value={form.eventType}
+            onChange={handleInputChange}
+            required
+            style={{ width: "100%", marginBottom: "1rem", padding: "10px" }}
+          />
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            ref={fileInputRef}
+            onChange={(e) => setImageFiles(Array.from(e.target.files))}
+            style={{ marginBottom: "1rem" }}
+          />
 
 
 
@@ -274,99 +283,117 @@ const handleSubmit = async (e) => {
           <p>No events created yet.</p>
         ) : (
           <div className="card-grid" style={{ marginTop: "2rem" }}>
-           {events.map((event) => (
-  <div
-    className="card"
-    key={event._id}
-    style={{ opacity: event.isPublished ? 1 : 0.7 }}
-  >
+            {events.map((event) => (
+              <div
+                className="card"
+                key={event._id}
+                style={{ opacity: event.isPublished ? 1 : 0.7 }}
+              >
 
 
-           
-
-              <button
-  onClick={() => {
-    setForm({
-      title: event.title,
-      description: event.description,
-      date: event.date?.slice(0, 10),
-      year: event.year,
-      location: event.location,
-      eventType: event.eventType,
-    });
-    setEditingEventId(event._id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }}
-  style={{
-    marginTop: "1rem",
-    marginRight: "0.5rem",
-    background: "#2563EB",
-    color: "#fff",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: "8px",
-    cursor: "pointer",
-  }}
->
-  Edit
-</button>
 
 
-    <button
-      type="button"
-      onClick={() => handleDelete(event._id)}
-      style={{
-        marginTop: "1rem",
-        background: "#DC2626",
-        color: "#fff",
-        border: "none",
-        padding: "8px 12px",
-        borderRadius: "8px",
-        cursor: "pointer",
-      }}
-    >
-  Delete
-</button>
-{event.image && (
-  <img
-    src={`http://localhost:5000${event.image}`}
-    alt={event.title}
-    style={{
-      width: "100%",
-      borderRadius: "8px",
-      marginBottom: "0.5rem",
-    }}
-  />
-)}
+                <button
+                  onClick={() => {
+                    setForm({
+                      title: event.title,
+                      description: event.description,
+                      date: event.date?.slice(0, 10),
+                      year: event.year,
+                      location: event.location,
+                      eventType: event.eventType,
+                    });
+                    setEditingEventId(event._id);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  style={{
+                    marginTop: "1rem",
+                    marginRight: "0.5rem",
+                    background: "#2563EB",
+                    color: "#fff",
+                    border: "none",
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Edit
+                </button>
 
-<button
-  onClick={async () => {
-    const token = localStorage.getItem("token");
 
-    await axios.patch(
-      `http://localhost:5000/api/events/${event._id}/publish`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+                <button
+                  type="button"
+                  onClick={() => handleDelete(event._id)}
+                  style={{
+                    marginTop: "1rem",
+                    background: "#DC2626",
+                    color: "#fff",
+                    border: "none",
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Delete
+                </button>
+                {/* IMAGES DISPLAY */}
+                {event.images && event.images.length > 0 ? (
+                  <div style={{ display: "flex", gap: "8px", overflowX: "auto", marginBottom: "0.5rem" }}>
+                    {event.images.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={`http://localhost:5000${img}`}
+                        alt={`${event.title}-${idx}`}
+                        style={{
+                          width: "100px",
+                          height: "60px",
+                          objectFit: "cover",
+                          borderRadius: "6px",
+                          flexShrink: 0
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : event.image ? (
+                  <img
+                    src={`http://localhost:5000${event.image}`}
+                    alt={event.title}
+                    style={{
+                      width: "100%",
+                      borderRadius: "8px",
+                      marginBottom: "0.5rem",
+                    }}
+                  />
+                ) : null}
 
-    fetchEvents(); // refresh list
-  }}
-  style={{
-    marginTop: "0.5rem",
-    background: event.isPublished ? "#F59E0B" : "#16A34A",
-    color: "#fff",
-    border: "none",
-    padding: "6px 10px",
-    borderRadius: "6px",
-    cursor: "pointer",
-  }}
->
-  {event.isPublished ? "Unpublish" : "Publish"}
-</button>
+                <button
+                  onClick={async () => {
+                    const token = localStorage.getItem("token");
+
+                    await axios.patch(
+                      `http://localhost:5000/api/events/${event._id}/publish`,
+                      {},
+                      {
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      }
+                    );
+
+                    fetchEvents(); // refresh list
+                  }}
+                  style={{
+                    marginTop: "0.5rem",
+                    background: event.isPublished ? "#F59E0B" : "#16A34A",
+                    color: "#fff",
+                    border: "none",
+                    padding: "6px 10px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                  }}
+                >
+                  {event.isPublished ? "Unpublish" : "Publish"}
+                </button>
 
 
                 <h3>{event.title}</h3>

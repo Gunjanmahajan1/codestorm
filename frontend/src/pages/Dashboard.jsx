@@ -47,8 +47,8 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       <div className="dashboard-content">
-        <h1>Admin Dashboard</h1>
-        <p>Quick overview of CodeStrom activities</p>
+        <h1>CodeStorm Dashboard 🚀</h1>
+        <p>Quick overview of CodeStorm activities</p>
 
         <div className="card-grid">
           <div className="card">

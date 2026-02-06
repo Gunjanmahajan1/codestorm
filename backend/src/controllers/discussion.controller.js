@@ -8,7 +8,7 @@ exports.getMessages = async (req, res, next) => {
       (await DiscussionSetting.findOne()) ||
       (await DiscussionSetting.create({ isEnabled: true }));
 
-    if (!settings.isEnabled) {
+    if (!settings.isEnabled && req.user.role !== "admin") {
       return res.status(403).json({
         success: false,
         message: "Discussion room is disabled",
@@ -67,6 +67,22 @@ exports.postMessage = async (req, res, next) => {
   }
 };
 
+/* -------------------- GET SETTINGS -------------------- */
+exports.getDiscussionSettings = async (req, res, next) => {
+  try {
+    const settings =
+      (await DiscussionSetting.findOne()) ||
+      (await DiscussionSetting.create({ isEnabled: true }));
+
+    res.status(200).json({
+      success: true,
+      data: settings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 /* -------------------- TOGGLE DISCUSSION (ADMIN) -------------------- */
 exports.toggleDiscussionStatus = async (req, res, next) => {
   try {
@@ -84,6 +100,52 @@ exports.toggleDiscussionStatus = async (req, res, next) => {
       message: "Discussion status updated",
       data: settings,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/* -------------------- UPDATE MESSAGE -------------------- */
+exports.updateMessage = async (req, res, next) => {
+  try {
+    const { content } = req.body;
+    const message = await Discussion.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ success: false, message: "Message not found" });
+    }
+
+    // Only author or admin can update
+    if (message.author.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    message.content = content;
+    await message.save();
+
+    res.status(200).json({ success: true, data: message });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/* -------------------- DELETE MESSAGE -------------------- */
+exports.deleteMessage = async (req, res, next) => {
+  try {
+    const message = await Discussion.findById(req.params.id);
+
+    if (!message) {
+      return res.status(404).json({ success: false, message: "Message not found" });
+    }
+
+    // Only author or admin can delete
+    if (message.author.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    await message.deleteOne();
+
+    res.status(200).json({ success: true, message: "Message deleted" });
   } catch (error) {
     next(error);
   }

@@ -39,13 +39,13 @@ const eventSchema = new mongoose.Schema(
       required: true,
     },
     isPublished: {
-  type: Boolean,
-  default: true,
-},
-image: {
-  type: String,
-  default: "",
-},
+      type: Boolean,
+      default: true,
+    },
+    images: {
+      type: [String],
+      default: [],
+    },
 
   },
   {
