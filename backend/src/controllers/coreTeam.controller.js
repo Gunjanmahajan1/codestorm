@@ -18,9 +18,9 @@ exports.getTeamMembers = async (req, res, next) => {
 /* -------------------- ADD MEMBER -------------------- */
 exports.addMember = async (req, res, next) => {
     try {
-        const { designation, name, order } = req.body;
+        const { designation, name, department, order } = req.body;
 
-        const member = await CoreTeam.create({ designation, name, order });
+        const member = await CoreTeam.create({ designation, name, department, order });
 
         res.status(201).json({
             success: true,

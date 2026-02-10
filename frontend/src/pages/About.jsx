@@ -212,20 +212,45 @@ const About = () => {
 
         {/* 3rd: ABOUT WRITTEN PARA */}
         <div style={{ marginTop: "4rem", maxWidth: "900px", margin: "4rem auto" }}>
-          <p style={{ marginTop: "1rem", lineHeight: "1.8", fontSize: "1.1rem" }}>
-            <strong>CodeStorm</strong> is the official technical club focused on
-            programming, problem-solving, and modern software development.
-          </p>
+          <h2 style={{ color: "#22c55e", marginBottom: "1.5rem" }}>CodeStorm Club MESCOE</h2>
 
-          <p style={{ marginTop: "1rem", lineHeight: "1.8", fontSize: "1.1rem" }}>
-            Our mission is to create a strong coding culture by organizing
-            workshops, contests, hackathons, and collaborative learning sessions.
-          </p>
+          <div style={{ marginBottom: "2rem" }}>
+            <h3 style={{ color: "#22c55e", fontSize: "1.3rem", marginBottom: "0.5rem" }}>Overview</h3>
+            <p style={{ lineHeight: "1.8", fontSize: "1.1rem" }}>
+              CodeStorm Club is a Coding and Technology related club at MESCOE
+            </p>
+          </div>
 
-          <p style={{ marginTop: "1rem", lineHeight: "1.8", fontSize: "1.1rem" }}>
-            We believe in learning by building, sharing knowledge, and growing
-            together as a tech community.
-          </p>
+          <div style={{ marginBottom: "2rem" }}>
+            <h3 style={{ color: "#22c55e", fontSize: "1.3rem", marginBottom: "0.5rem" }}>Vision:</h3>
+            <p style={{ lineHeight: "1.8", fontSize: "1.1rem" }}>
+              To ensure that students acquire and use knowledge and coding skills to become creative and successful members of society.
+            </p>
+          </div>
+
+          <div style={{ marginBottom: "2rem" }}>
+            <h3 style={{ color: "#22c55e", fontSize: "1.3rem", marginBottom: "0.5rem" }}>Mission:</h3>
+            <ul style={{ lineHeight: "1.8", fontSize: "1.1rem", paddingLeft: "1.5rem", listStyleType: "disc" }}>
+              <li>To foster an environment of learning and sharing to help students achieve their career objectives.</li>
+              <li>To make the members of the club better at coding, faster at program solving and more aware of the current situation in the computer world.</li>
+            </ul>
+          </div>
+
+          <div style={{ marginBottom: "2rem" }}>
+            <h3 style={{ color: "#22c55e", fontSize: "1.3rem", marginBottom: "0.5rem" }}>Objectives:</h3>
+            <ul style={{ lineHeight: "1.8", fontSize: "1.1rem", paddingLeft: "1.5rem", listStyleType: "disc" }}>
+              <li>Be a forum for interaction among students of the institute.</li>
+              <li>Help to increase coding literacy.</li>
+              <li>To develop coding skills to crack technical rounds of any company.</li>
+              <li>To spread awareness about competitive programming.</li>
+            </ul>
+          </div>
+
+          <div style={{ marginTop: "3rem", borderTop: "1px solid rgba(34, 197, 94, 0.3)", paddingTop: "1.5rem" }}>
+            <p style={{ fontSize: "1.2rem", fontWeight: "bold" }}>
+              Founder: <span style={{ color: "#22c55e" }}>Sandesh Pabitwar</span>
+            </p>
+          </div>
         </div>
       </div>
     </div>

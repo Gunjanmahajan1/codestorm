@@ -1,13 +1,14 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "../styles/login.css";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -49,7 +50,7 @@ const Login = () => {
 
         <input
           type="email"
-          placeholder="Admin"
+          placeholder="Email Id"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -62,14 +63,15 @@ const Login = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            className="password-input"
           />
-
-          <span
+          <div
             className="toggle-password"
             onClick={() => setShowPassword(!showPassword)}
+            title={showPassword ? "Hide password" : "Show password"}
           >
-            {showPassword ? "🙈" : "👁️"}
-          </span>
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </div>
         </div>
 
         <button type="submit">Login</button>

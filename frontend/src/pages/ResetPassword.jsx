@@ -1,11 +1,15 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "../styles/login.css";
 
 const ResetPassword = () => {
-  const [token, setToken] = useState("");
+  const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
@@ -15,10 +19,15 @@ const ResetPassword = () => {
     setError("");
     setSuccess("");
 
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     try {
       await axios.post(
         "http://localhost:5000/api/auth/reset-password",
-        { token, password }
+        { otp, password }
       );
 
       setSuccess("Password reset successful. Redirecting to login...");
@@ -37,23 +46,51 @@ const ResetPassword = () => {
         <h2>Reset Password</h2>
 
         {error && <p className="error">{error}</p>}
-        {success && <p style={{ color: "green" }}>{success}</p>}
+        {success && <p style={{ color: "var(--green)", textAlign: "center", marginBottom: "1rem" }}>{success}</p>}
 
         <input
           type="text"
-          placeholder="Reset Token"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
+          placeholder="Enter 6-digit OTP"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
           required
         />
 
-        <input
-          type="password"
-          placeholder="New Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <div className="password-wrapper">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="New Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="password-input"
+          />
+          <div
+            className="toggle-password"
+            onClick={() => setShowPassword(!showPassword)}
+            title={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </div>
+        </div>
+
+        <div className="password-wrapper">
+          <input
+            type={showConfirmPassword ? "text" : "password"}
+            placeholder="Confirm New Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            className="password-input"
+          />
+          <div
+            className="toggle-password"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            title={showConfirmPassword ? "Hide password" : "Show password"}
+          >
+            {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+          </div>
+        </div>
 
         <button type="submit">Reset Password</button>
       </form>
