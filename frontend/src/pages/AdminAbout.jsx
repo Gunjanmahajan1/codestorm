@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { API_BASE_URL } from "../services/api";
 import "../styles/dashboard.css";
 
 const AdminAbout = () => {
@@ -20,7 +20,7 @@ const AdminAbout = () => {
 
     const fetchMembers = async () => {
         try {
-            const res = await axios.get("http://localhost:5000/api/core-team");
+            const res = await api.get("/api/core-team");
             setMembers(res.data.data || []);
         } catch (err) {
             console.error("Failed to load members", err);
@@ -29,7 +29,7 @@ const AdminAbout = () => {
 
     const fetchSliderImages = async () => {
         try {
-            const res = await axios.get("http://localhost:5000/api/about-slider");
+            const res = await api.get("/api/about-slider");
             setSliderImages(res.data.data || []);
         } catch (err) {
             console.error("Failed to load slider images", err);
@@ -52,19 +52,10 @@ const AdminAbout = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem("token");
-            const config = {
-                headers: { Authorization: `Bearer ${token}` },
-            };
-
             if (editingId) {
-                await axios.put(
-                    `http://localhost:5000/api/core-team/${editingId}`,
-                    form,
-                    config
-                );
+                await api.put(`/api/core-team/${editingId}`, form);
             } else {
-                await axios.post("http://localhost:5000/api/core-team", form, config);
+                await api.post("/api/core-team", form);
             }
 
             setForm({ designation: "", name: "", order: 0 });
@@ -82,14 +73,12 @@ const AdminAbout = () => {
 
         setUploading(true);
         try {
-            const token = localStorage.getItem("token");
             const formData = new FormData();
             formData.append("image", sliderImage);
             formData.append("order", sliderOrder);
 
-            await axios.post("http://localhost:5000/api/about-slider", formData, {
+            await api.post("/api/about-slider", formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     "Content-Type": "multipart/form-data",
                 },
             });
@@ -109,10 +98,7 @@ const AdminAbout = () => {
     const handleDeleteSlider = async (id) => {
         if (!window.confirm("Delete this slider image?")) return;
         try {
-            const token = localStorage.getItem("token");
-            await axios.delete(`http://localhost:5000/api/about-slider/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.delete(`/api/about-slider/${id}`);
             fetchSliderImages();
         } catch (error) {
             console.error("Failed to delete slider image", error);
@@ -132,15 +118,13 @@ const AdminAbout = () => {
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this member?")) return;
         try {
-            const token = localStorage.getItem("token");
-            await axios.delete(`http://localhost:5000/api/core-team/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.delete(`/api/core-team/${id}`);
             fetchMembers();
         } catch (error) {
             console.error("Failed to delete member", error);
         }
     };
+
 
     return (
         <div className="dashboard">
@@ -182,8 +166,9 @@ const AdminAbout = () => {
                         {sliderImages.map((img) => (
                             <div key={img._id} style={{ position: "relative", borderRadius: "12px", overflow: "hidden", border: "1px solid #334155", background: "#1e293b" }}>
                                 <img
-                                    src={`http://localhost:5000${img.imageUrl}`}
+                                    src={`${API_BASE_URL}${img.imageUrl}`}
                                     alt="Slider"
+
                                     style={{ width: "100%", height: "100px", objectFit: "cover" }}
                                 />
                                 <div style={{ padding: "5px", textAlign: "center", fontSize: "12px" }}>Order: {img.order}</div>

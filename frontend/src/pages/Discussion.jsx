@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import api from "../services/api";
 import { FaPaperPlane, FaCheck } from "react-icons/fa";
 import "../styles/dashboard.css";
 
@@ -16,10 +16,7 @@ const Discussion = () => {
   /* ---------------- FETCH MESSAGES ---------------- */
   const fetchMessages = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/discussion",
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.get("/api/discussion");
       setMessages(res.data.data || []);
       setErrorMsg("");
     } catch (err) {
@@ -36,18 +33,10 @@ const Discussion = () => {
 
     try {
       if (editingId) {
-        await axios.put(
-          `http://localhost:5000/api/discussion/${editingId}`,
-          { content },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await api.put(`/api/discussion/${editingId}`, { content });
         setEditingId(null);
       } else {
-        await axios.post(
-          "http://localhost:5000/api/discussion",
-          { content },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await api.post("/api/discussion", { content });
       }
 
       setContent("");
@@ -65,15 +54,13 @@ const Discussion = () => {
     if (!window.confirm("Delete this message?")) return;
 
     try {
-      await axios.delete(
-        `http://localhost:5000/api/discussion/${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.delete(`/api/discussion/${id}`);
       fetchMessages();
     } catch (err) {
       console.error("Delete failed");
     }
   };
+
 
   /* ---------------- TIME FORMAT ---------------- */
   const formatTime = (date) => {

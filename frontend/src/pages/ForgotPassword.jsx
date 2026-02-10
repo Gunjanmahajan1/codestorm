@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "../styles/login.css";
@@ -22,10 +22,7 @@ const ForgotPassword = () => {
     setMessage("");
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/forgot-password",
-        { email }
-      );
+      const res = await api.post("/api/auth/forgot-password", { email });
       setMessage(res.data.message || "OTP sent to your email.");
       setStep(2);
     } catch (err) {
@@ -39,7 +36,7 @@ const ForgotPassword = () => {
     setMessage("");
 
     try {
-      await axios.post("http://localhost:5000/api/auth/verify-otp", {
+      await api.post("/api/auth/verify-otp", {
         email,
         otp,
       });
@@ -61,11 +58,12 @@ const ForgotPassword = () => {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/auth/reset-password", {
+      await api.post("/api/auth/reset-password", {
         email,
         otp,
         password,
       });
+
 
       setMessage("Password reset successful! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);

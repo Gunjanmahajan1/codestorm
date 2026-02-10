@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 import "../styles/dashboard.css";
 import { SiCodeforces, SiCodechef, SiLeetcode } from "react-icons/si";
 
@@ -70,11 +70,12 @@ END:VCALENDAR
 
   /* ---------------- FETCH INTERNAL CONTESTS ---------------- */
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/contests")
+    api
+      .get("/api/contests")
       .then((res) => setContests(res.data.data || []))
       .catch(() => setContests([]));
   }, []);
+
 
   /* ---------------- UI ---------------- */
   return (

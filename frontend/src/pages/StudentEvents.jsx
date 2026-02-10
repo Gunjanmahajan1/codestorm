@@ -1,8 +1,7 @@
 
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { API_BASE_URL } from "../services/api";
 import "../styles/dashboard.css";
-console.count("StudentEvents mounted");
 
 const StudentEvents = () => {
   const [events, setEvents] = useState([]);
@@ -14,9 +13,7 @@ const StudentEvents = () => {
 
   const fetchEvents = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/events/public"
-      );
+      const res = await api.get("/api/events/public");
       setEvents(res.data.data || res.data);
       setLoading(false);
     } catch (error) {
@@ -24,6 +21,7 @@ const StudentEvents = () => {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="dashboard">
@@ -55,7 +53,7 @@ const StudentEvents = () => {
                     {event.images.map((img, index) => (
                       <img
                         key={index}
-                        src={`http://localhost:5000${img}`}
+                        src={`${API_BASE_URL}${img}`}
                         alt={`${event.title} ${index + 1}`}
                         style={{
                           width: "100%",
@@ -70,7 +68,7 @@ const StudentEvents = () => {
                   </div>
                 ) : event.image ? (
                   <img
-                    src={`http://localhost:5000${event.image}`}
+                    src={`${API_BASE_URL}${event.image}`}
                     alt={event.title}
                     style={{
                       width: "100%",

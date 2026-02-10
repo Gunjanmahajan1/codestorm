@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 
 const AdminConnect = () => {
   const [form, setForm] = useState({
@@ -10,8 +10,8 @@ const AdminConnect = () => {
   });
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/contact")
+    api
+      .get("/api/contact")
       .then((res) => {
         const data = res?.data?.data || {};
 
@@ -36,18 +36,7 @@ const AdminConnect = () => {
 
   const save = async () => {
     try {
-      const token = localStorage.getItem("token");
-
-      await axios.put(
-        "http://localhost:5000/api/contact",
-        form,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      await api.put("/api/contact", form);
 
       alert("Contact details updated successfully");
     } catch (error) {
@@ -55,6 +44,7 @@ const AdminConnect = () => {
       alert("Update failed");
     }
   };
+
 
   return (
     <div className="dashboard-content">

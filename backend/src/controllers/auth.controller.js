@@ -20,7 +20,7 @@ const generateToken = (user) => {
 /* -------------------- SIGNUP -------------------- */
 exports.signup = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, phone, password, role } = req.body;
 
     // Check existing user
     const existingUser = await User.findOne({ email });
@@ -35,6 +35,7 @@ exports.signup = async (req, res, next) => {
     const user = await User.create({
       name,
       email,
+      phone,
       password,
       role: role === "admin" ? "admin" : "student",
     });

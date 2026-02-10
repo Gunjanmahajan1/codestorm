@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 import "../styles/dashboard.css";
 
 const Dashboard = () => {
@@ -14,13 +14,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem("token");
-
-        const res = await axios.get("http://localhost:5000/api/events", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await api.get("/api/events");
 
         const events = res.data.data || [];
         const today = new Date();
@@ -43,6 +37,7 @@ const Dashboard = () => {
 
     fetchStats();
   }, []);
+
 
   return (
     <div className="dashboard">

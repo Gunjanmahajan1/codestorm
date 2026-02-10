@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 import "../styles/dashboard.css";
 
 const AdminContests = () => {
   const [contests, setContests] = useState([]);
-  const token = localStorage.getItem("token");
 
   const fetchContests = async () => {
-    const res = await axios.get("http://localhost:5000/api/contests");
+    const res = await api.get("/api/contests");
     setContests(res.data.data || []);
   };
 
@@ -18,17 +17,14 @@ const AdminContests = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this contest?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/contests/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await api.delete(`/api/contests/${id}`);
       fetchContests();
     } catch (error) {
       console.error("Delete failed", error);
       alert("Failed to delete contest");
     }
   };
+
 
   return (
     <div className="dashboard">
@@ -41,25 +37,19 @@ const AdminContests = () => {
           onSubmit={async (e) => {
             e.preventDefault();
 
-            const token = localStorage.getItem("token");
-
-            await axios.post(
-              "http://localhost:5000/api/contests",
+            await api.post(
+              "/api/contests",
               {
                 title: e.target.title.value,
                 description: e.target.description.value,
                 date: e.target.date.value,
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
               }
             );
 
             e.target.reset();
             fetchContests();
           }}
+
         >
           <input
             name="title"

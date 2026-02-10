@@ -1,6 +1,6 @@
 
 import { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import api, { API_BASE_URL } from "../services/api";
 import "../styles/dashboard.css";
 
 const AdminEvents = () => {
@@ -25,17 +25,7 @@ const AdminEvents = () => {
   // ---------------- HELPERS ----------------
   const fetchEvents = async () => {
     try {
-      const token = localStorage.getItem("token");
-
-      const res = await axios.get(
-        "http://localhost:5000/api/events",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      const res = await api.get("/api/events");
       setEvents(res.data.data || res.data);
       setLoading(false);
     }
@@ -55,21 +45,11 @@ const AdminEvents = () => {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem("token");
-
       let targetEventId = editingEventId;
 
       if (editingEventId) {
         // 🔁 EDIT EVENT
-        await axios.put(
-          `http://localhost:5000/api/events/${editingEventId}`,
-          form,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        await api.put(`/api/events/${editingEventId}`, form);
       } else {
         // ➕ CREATE EVENT
         const publishNow = window.confirm(
@@ -81,15 +61,7 @@ const AdminEvents = () => {
           isPublished: publishNow,
         };
 
-        const res = await axios.post(
-          "http://localhost:5000/api/events",
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await api.post("/api/events", payload);
         targetEventId = res.data.data._id;
       }
 
@@ -100,12 +72,11 @@ const AdminEvents = () => {
           formData.append("images", imageFiles[i]);
         }
 
-        await axios.post(
-          `http://localhost:5000/api/events/${targetEventId}/image`,
+        await api.post(
+          `/api/events/${targetEventId}/image`,
           formData,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               "Content-Type": "multipart/form-data",
             },
           }
@@ -147,17 +118,7 @@ const AdminEvents = () => {
     if (!confirmDelete) return;
 
     try {
-      const token = localStorage.getItem("token");
-
-      await axios.delete(
-        `http://localhost:5000/api/events/${eventId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      await api.delete(`/api/events/${eventId}`);
       // Refresh events after delete
       fetchEvents();
     } catch (error) {
@@ -185,12 +146,10 @@ const AdminEvents = () => {
           style={{ marginTop: "1.5rem" }}
         >
           <h3>{editingEventId ? "Edit Event" : "Create New Event"}</h3>
-          {event.imageUrl && (
-
-
+          {form.imageUrl && (
             <img
-              src={event.imageUrl}
-              alt={event.title}
+              src={form.imageUrl}
+              alt={form.title}
               style={{
                 width: "100%",
                 height: "180px",
@@ -342,7 +301,7 @@ const AdminEvents = () => {
                     {event.images.map((img, idx) => (
                       <img
                         key={idx}
-                        src={`http://localhost:5000${img}`}
+                        src={img.startsWith('http') ? img : `${API_BASE_URL}${img}`}
                         alt={`${event.title}-${idx}`}
                         style={{
                           width: "100px",
@@ -356,7 +315,7 @@ const AdminEvents = () => {
                   </div>
                 ) : event.image ? (
                   <img
-                    src={`http://localhost:5000${event.image}`}
+                    src={event.image.startsWith('http') ? event.image : `${API_BASE_URL}${event.image}`}
                     alt={event.title}
                     style={{
                       width: "100%",
@@ -368,18 +327,7 @@ const AdminEvents = () => {
 
                 <button
                   onClick={async () => {
-                    const token = localStorage.getItem("token");
-
-                    await axios.patch(
-                      `http://localhost:5000/api/events/${event._id}/publish`,
-                      {},
-                      {
-                        headers: {
-                          Authorization: `Bearer ${token}`,
-                        },
-                      }
-                    );
-
+                    await api.patch(`/api/events/${event._id}/publish`);
                     fetchEvents(); // refresh list
                   }}
                   style={{
@@ -414,3 +362,4 @@ const AdminEvents = () => {
 };
 
 export default AdminEvents;
+

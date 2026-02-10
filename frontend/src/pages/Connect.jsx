@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 import "../styles/dashboard.css";
 import {
   FaEnvelope,
@@ -13,8 +13,8 @@ const Connect = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/contact")
+    api
+      .get("/api/contact")
       .then((res) => {
         setContact(res.data.data);
         setLoading(false);

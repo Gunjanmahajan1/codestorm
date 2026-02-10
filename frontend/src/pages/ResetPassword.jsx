@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "../styles/login.css";
@@ -25,10 +25,7 @@ const ResetPassword = () => {
     }
 
     try {
-      await axios.post(
-        "http://localhost:5000/api/auth/reset-password",
-        { otp, password }
-      );
+      await api.post("/api/auth/reset-password", { otp, password });
 
       setSuccess("Password reset successful. Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);
@@ -39,6 +36,7 @@ const ResetPassword = () => {
       );
     }
   };
+
 
   return (
     <div className="login-container">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../services/api";
 import { useNavigate, Link } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "../styles/login.css";
@@ -7,6 +7,7 @@ import "../styles/login.css";
 const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -18,15 +19,14 @@ const Signup = () => {
     setError("");
 
     try {
-      await axios.post(
-        "http://localhost:5000/api/auth/signup",
-        {
-          name,
-          email,
-          password,
-          role: "student", // 👈 force student role
-        }
-      );
+      await api.post("/api/auth/signup", {
+        name,
+        email,
+        phone,
+        password,
+        role: "student", // 👈 force student role
+      });
+
 
       alert("Signup successful. Please login.");
       navigate("/login");
@@ -59,6 +59,14 @@ const Signup = () => {
           placeholder="Email Id"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <input
+          type="tel"
+          placeholder="Phone Number"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
           required
         />
 

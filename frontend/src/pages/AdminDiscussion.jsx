@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import api from "../services/api";
 import { FaPaperPlane, FaCheck, FaTrash, FaLock, FaUnlock } from "react-icons/fa";
 import "../styles/dashboard.css";
 
@@ -14,13 +14,11 @@ const AdminDiscussion = () => {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
 
+
   /* ---------------- FETCH DATA ---------------- */
   const fetchMessages = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/discussion",
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.get("/api/discussion");
       setMessages(res.data.data || []);
     } catch (err) {
       console.error("Failed to fetch discussion");
@@ -29,9 +27,7 @@ const AdminDiscussion = () => {
 
   const fetchSettings = async () => {
     try {
-      const res = await axios.get(
-        "http://localhost:5000/api/discussion/settings"
-      );
+      const res = await api.get("/api/discussion/settings");
       setEnabled(res.data.data.isEnabled);
     } catch (err) {
       console.error("Failed to fetch discussion settings");
@@ -44,18 +40,10 @@ const AdminDiscussion = () => {
 
     try {
       if (editingId) {
-        await axios.put(
-          `http://localhost:5000/api/discussion/${editingId}`,
-          { content },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await api.put(`/api/discussion/${editingId}`, { content });
         setEditingId(null);
       } else {
-        await axios.post(
-          "http://localhost:5000/api/discussion",
-          { content },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await api.post("/api/discussion", { content });
       }
 
       setContent("");
@@ -73,10 +61,7 @@ const AdminDiscussion = () => {
     if (!window.confirm("Delete this message?")) return;
 
     try {
-      await axios.delete(
-        `http://localhost:5000/api/discussion/${id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.delete(`/api/discussion/${id}`);
       fetchMessages();
     } catch (err) {
       console.error("Delete failed");
@@ -86,16 +71,13 @@ const AdminDiscussion = () => {
   /* ---------------- TOGGLE DISCUSSION ---------------- */
   const toggleDiscussion = async () => {
     try {
-      const res = await axios.put(
-        "http://localhost:5000/api/discussion/toggle",
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.put("/api/discussion/toggle", {});
       setEnabled(res.data.data.isEnabled);
     } catch {
       alert("Toggle failed");
     }
   };
+
 
   /* ---------------- TIME FORMAT ---------------- */
   const formatTime = (date) => {

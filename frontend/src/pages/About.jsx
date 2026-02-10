@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api, { API_BASE_URL } from "../services/api";
 import "../styles/dashboard.css";
 
 const About = () => {
@@ -9,8 +9,7 @@ const About = () => {
 
   useEffect(() => {
     // Fetch committee members
-    axios
-      .get("http://localhost:5000/api/core-team")
+    api.get("/api/core-team")
       .then((res) => {
         setMembers(res.data.data || []);
       })
@@ -19,8 +18,7 @@ const About = () => {
       });
 
     // Fetch slider images
-    axios
-      .get("http://localhost:5000/api/about-slider")
+    api.get("/api/about-slider")
       .then((res) => {
         setSliderImages(res.data.data || []);
       })
@@ -28,6 +26,7 @@ const About = () => {
         console.error("Failed to fetch slider images", err);
       });
   }, []);
+
 
   /* ---------------- HANDLERS ---------------- */
   const nextSlide = () => {
@@ -68,8 +67,9 @@ const About = () => {
                 }}
               >
                 <img
-                  src={`http://localhost:5000${img.imageUrl}`}
+                  src={`${API_BASE_URL}${img.imageUrl}`}
                   alt={`Slide ${index}`}
+
                   style={{
                     width: "100%",
                     height: "100%",
