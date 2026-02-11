@@ -296,34 +296,55 @@ const AdminEvents = () => {
                   Delete
                 </button>
                 {/* IMAGES DISPLAY */}
-                {event.images && event.images.length > 0 ? (
-                  <div style={{ display: "flex", gap: "8px", overflowX: "auto", marginBottom: "0.5rem" }}>
-                    {event.images.map((img, idx) => (
+                <div style={{ display: "flex", gap: "10px", overflowX: "auto", marginBottom: "0.5rem", padding: "5px 0" }}>
+                  {(event.images && event.images.length > 0 ? event.images : event.image ? [event.image] : []).map((img, idx) => (
+                    <div key={idx} style={{ position: "relative", width: "120px", height: "80px", flexShrink: 0 }}>
                       <img
-                        key={idx}
                         src={img.startsWith('http') ? img : `${API_BASE_URL}${img}`}
                         alt={`${event.title}-${idx}`}
                         style={{
-                          width: "100px",
-                          height: "60px",
+                          width: "100%",
+                          height: "100%",
                           objectFit: "cover",
-                          borderRadius: "6px",
-                          flexShrink: 0
+                          borderRadius: "8px",
                         }}
                       />
-                    ))}
-                  </div>
-                ) : event.image ? (
-                  <img
-                    src={event.image.startsWith('http') ? event.image : `${API_BASE_URL}${event.image}`}
-                    alt={event.title}
-                    style={{
-                      width: "100%",
-                      borderRadius: "8px",
-                      marginBottom: "0.5rem",
-                    }}
-                  />
-                ) : null}
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm("Delete this photo?")) return;
+                          try {
+                            await api.delete(`/api/events/${event._id}/image`, {
+                              data: { imagePath: img }
+                            });
+                            fetchEvents();
+                          } catch (err) {
+                            console.error("Failed to delete image", err);
+                            alert("Failed to delete image");
+                          }
+                        }}
+                        style={{
+                          position: "absolute",
+                          top: "5px",
+                          right: "5px",
+                          background: "rgba(239, 68, 68, 0.9)", // red
+                          color: "white",
+                          border: "none",
+                          width: "24px",
+                          height: "24px",
+                          borderRadius: "50%",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "14px",
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
 
                 <button
                   onClick={async () => {

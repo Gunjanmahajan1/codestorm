@@ -1,5 +1,7 @@
 const Event = require("../models/Event.model");
 const jwtService = require("../services/jwt.service");
+const fs = require('fs');
+const path = require('path');
 
 /* -------------------- CREATE EVENT -------------------- */
 exports.createEvent = async (req, res, next) => {
@@ -214,6 +216,68 @@ exports.uploadEventImage = async (req, res) => {
   } catch (error) {
     console.error("Upload image error:", error);
     res.status(500).json({ success: false, message: "Upload failed" });
+  }
+};
+
+/* -------------------- DELETE EVENT IMAGE -------------------- */
+exports.deleteEventImage = async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    const { imagePath } = req.body; // e.g., "/uploads/123.jpg"
+
+    if (!imagePath) {
+      return res.status(400).json({
+        success: false,
+        message: "Image path is required",
+      });
+    }
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: "Event not found",
+      });
+    }
+
+    // Remove image from array
+    const initialLength = event.images.length;
+    event.images = event.images.filter(img => img !== imagePath);
+
+    // Also check single image field (backward compatibility)
+    if (event.image === imagePath) {
+      event.image = "";
+    }
+
+    if (event.images.length === initialLength && event.image !== "") {
+      return res.status(404).json({
+        success: false,
+        message: "Image not found in event",
+      });
+    }
+
+    await event.save();
+
+    // Attempt to delete file from filesystem
+    // Assuming imagePath starts with /uploads/
+    if (imagePath.startsWith('/uploads/')) {
+      const filePath = path.join(__dirname, '..', '..', imagePath); // Adjust path relative to controller file
+      // path: backend/src/controllers/../../uploads/filename
+      fs.unlink(filePath, (err) => {
+        if (err) console.error("Failed to delete local file:", err);
+        else console.log("Deleted local file:", filePath);
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Image deleted successfully",
+      data: event,
+    });
+
+  } catch (error) {
+    console.error("Delete image error:", error);
+    res.status(500).json({ success: false, message: "Delete failed" });
   }
 };
 

@@ -10,7 +10,9 @@ const {
   togglePublishEvent,
   getPublishedEvents,
   uploadEventImage,
+  deleteEventImage,
 } = require("../controllers/event.controller");
+
 
 const { protect, adminOnly } = require("../middleware/auth.middleware");
 const upload = require("../middleware/upload.middleware");
@@ -49,4 +51,8 @@ router.post(
   uploadEventImage
 );
 
+// Delete event image
+router.delete("/:id/image", protect, adminOnly, deleteEventImage);
+
 module.exports = router;
+
