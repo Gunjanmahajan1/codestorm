@@ -6,6 +6,7 @@ import { useEffect, useState, useRef } from "react";
 const Navbar = () => {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [role, setRole] = useState(localStorage.getItem("role"));
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
 
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ const Navbar = () => {
   useEffect(() => {
     setToken(localStorage.getItem("token"));
     setRole(localStorage.getItem("role"));
+    setShowMobileMenu(false); // Close mobile menu on route change
   }, [location]);
 
   useEffect(() => {
@@ -33,7 +35,6 @@ const Navbar = () => {
     };
   }, []);
 
-
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
@@ -50,91 +51,39 @@ const Navbar = () => {
         </Link>
       </h2>
 
+      {/* MOBILE MENU TOGGLE */}
+      <div className="menu-icon" onClick={() => setShowMobileMenu(!showMobileMenu)}>
+        {showMobileMenu ? <span style={{ fontSize: "1.5rem", cursor: "pointer" }}>✕</span> : <span style={{ fontSize: "1.5rem", cursor: "pointer" }}>☰</span>}
+      </div>
+
       {/* LINKS */}
-      <div style={{ display: "flex", gap: "1.2rem", alignItems: "center" }}>
-        <Link to="/#events">Events</Link>
-        <Link to="/#contact">Contact</Link>
-        <Link to="/#about">About</Link>
-        <Link to="/contests">Contests</Link>
-        {role !== "admin" && <Link to="/discussion">Discussion</Link>}
+      <div className={`nav-links ${showMobileMenu ? "active" : ""}`}>
+        <Link to="/#events" onClick={() => setShowMobileMenu(false)}>Events</Link>
+        <Link to="/#contact" onClick={() => setShowMobileMenu(false)}>Contact</Link>
+        <Link to="/#about" onClick={() => setShowMobileMenu(false)}>About</Link>
+        <Link to="/contests" onClick={() => setShowMobileMenu(false)}>Contests</Link>
+        {role !== "admin" && <Link to="/discussion" onClick={() => setShowMobileMenu(false)}>Discussion</Link>}
 
         {token && role === "admin" && (
-          <div ref={adminMenuRef} style={{ position: "relative" }}>
-            {/* ADMIN BUTTON (TEXT + ARROW = ONE CLICK AREA) */}
+          <div ref={adminMenuRef} className="admin-dropdown-container">
+            {/* ADMIN BUTTON */}
             <button
               type="button"
+              className="admin-btn"
               onClick={() => setShowAdminMenu((prev) => !prev)}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "white",
-                fontWeight: "600",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                fontSize: "1rem",
-              }}
             >
               Admin <span>▾</span>
             </button>
 
             {/* DROPDOWN */}
             {showAdminMenu && (
-              <div
-                style={{
-                  position: "absolute",
-                  top: "2rem",
-                  right: 0,
-                  background: "#020617",
-                  border: "1px solid #334155",
-                  borderRadius: "8px",
-                  minWidth: "160px",
-                  zIndex: 100,
-                }}
-              >
-                <Link
-                  className="dropdown-link"
-                  to="/dashboard"
-                  onClick={() => setShowAdminMenu(false)}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  className="dropdown-link"
-                  to="/admin/events"
-                  onClick={() => setShowAdminMenu(false)}
-                >
-                  Events
-                </Link>
-                <Link
-                  className="dropdown-link"
-                  to="/admin/connect"
-                  onClick={() => setShowAdminMenu(false)}
-                >
-                  Contact
-                </Link>
-                <Link
-                  className="dropdown-link"
-                  to="/admin/about"
-                  onClick={() => setShowAdminMenu(false)}
-                >
-                  About
-                </Link>
-                <Link
-                  className="dropdown-link"
-                  to="/admin/contests"
-                  onClick={() => setShowAdminMenu(false)}
-                >
-                  Contests
-                </Link>
-                <Link
-                  className="dropdown-link"
-                  to="/admin/discussion"
-                  onClick={() => setShowAdminMenu(false)}
-                >
-                  Discussion
-                </Link>
+              <div className="admin-dropdown-menu">
+                <Link className="dropdown-link" to="/dashboard" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>Dashboard</Link>
+                <Link className="dropdown-link" to="/admin/events" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>Events</Link>
+                <Link className="dropdown-link" to="/admin/connect" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>Contact</Link>
+                <Link className="dropdown-link" to="/admin/about" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>About</Link>
+                <Link className="dropdown-link" to="/admin/contests" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>Contests</Link>
+                <Link className="dropdown-link" to="/admin/discussion" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>Discussion</Link>
               </div>
             )}
           </div>
@@ -142,13 +91,11 @@ const Navbar = () => {
 
         {/* LOGIN / LOGOUT */}
         {token ? (
-          <button className="logout-btn" onClick={logout}>
+          <button className="logout-btn" onClick={() => { logout(); setShowMobileMenu(false); }}>
             Logout
           </button>
         ) : (
-          <>
-            <Link to="/login">Login</Link>
-          </>
+          <Link to="/login" onClick={() => setShowMobileMenu(false)}>Login</Link>
         )}
       </div>
     </nav>

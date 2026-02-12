@@ -11,6 +11,8 @@ body,
 #root {
   width: 100%;
   min-height: 100vh;
-  background-color: #020617; /* CodeStrom dark */
+  background-color: #020617;
+  /* CodeStrom dark */
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
 }

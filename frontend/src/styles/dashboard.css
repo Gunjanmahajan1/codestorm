@@ -656,6 +656,7 @@ details[open] .dropdown {
 .landing-page .dashboard-content {
   padding-bottom: 0;
 }
+
 /* ---------- Admin Chat Specific ---------- */
 .chat-header-admin {
   background: #1e293b;
@@ -723,4 +724,127 @@ details[open] .dropdown {
 .toggle-btn:hover {
   opacity: 0.9;
   transform: translateY(-1px);
+}
+
+/* ================= MOBILE NAVBAR NEW STYLES ================= */
+
+.nav-links {
+  display: flex !important;
+  /* Ensure flex on desktop */
+  gap: 1.2rem;
+  align-items: center;
+}
+
+.menu-icon {
+  display: none !important;
+  /* Force hide on desktop */
+  color: white;
+}
+
+.admin-dropdown-container {
+  position: relative;
+}
+
+.admin-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1rem;
+}
+
+.admin-dropdown-menu {
+  position: absolute;
+  top: 2rem;
+  right: 0;
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  min-width: 160px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .menu-icon {
+    display: block !important;
+    cursor: pointer;
+    z-index: 1001;
+  }
+
+  /* When NOT active, hide links off-screen */
+  .nav-links {
+    position: fixed;
+    top: 73px;
+    /* Adjust based on navbar height */
+    right: -100%;
+    /* Move off-screen */
+    width: 250px;
+    height: calc(100vh - 73px);
+    background: #020617;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 2rem;
+    transition: right 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    /* Smooth transition */
+    border-left: 1px solid var(--border);
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  /* When ACTIVE, show links */
+  .nav-links.active {
+    right: 0;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .nav-links a {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    display: block;
+    width: 100%;
+  }
+
+  .logout-btn {
+    width: 100%;
+    margin-top: 1rem;
+  }
+
+  /* Admin Dropdown specific for mobile */
+  .admin-dropdown-container {
+    width: 100%;
+    margin-bottom: 1.5rem;
+  }
+
+  .admin-btn {
+    width: 100%;
+    justify-content: space-between;
+    font-size: 1.1rem;
+    padding: 0;
+  }
+
+  /* Inline dropdown for mobile */
+  .admin-dropdown-menu {
+    position: static;
+    width: 100%;
+    border: none;
+    box-shadow: none;
+    background: rgba(255, 255, 255, 0.05);
+    margin-top: 0.5rem;
+    padding-left: 0;
+  }
+
+  .admin-dropdown-menu .dropdown-link {
+    padding-left: 1rem;
+  }
 }
