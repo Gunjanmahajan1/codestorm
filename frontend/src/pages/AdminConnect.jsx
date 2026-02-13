@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import "../styles/dashboard.css";
 
 const AdminConnect = () => {
   const [form, setForm] = useState({

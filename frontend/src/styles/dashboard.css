@@ -88,25 +88,26 @@
   font-weight: bold;
 }
 
-/* ---------- Form Inputs inside Cards ---------- */
-.card input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
-.card textarea,
-.card select {
+/* ---------- Form Inputs ---------- */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+textarea,
+select {
   background: #0f172a;
-  color: white;
+  color: white !important;
+  /* Ensure white text on dark background */
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px;
 }
 
-.card input::placeholder,
-.card textarea::placeholder {
+input::placeholder,
+textarea::placeholder {
   color: #9ca3af;
 }
 
-.card input:focus,
-.card textarea:focus,
-.card select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
   border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
