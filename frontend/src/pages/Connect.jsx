@@ -30,6 +30,14 @@ const Connect = () => {
     return <p style={{ padding: "1rem" }}>No contact details available.</p>;
   }
 
+  const ensureAbsoluteUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("mailto:")) {
+      return url;
+    }
+    return `https://${url}`;
+  };
+
   return (
     <div className="dashboard">
       <div className="dashboard-content">
@@ -39,7 +47,7 @@ const Connect = () => {
           {contact.email && (
             <a
               href={`mailto:${contact.email}`}
-              className="card"
+              className="card email"
               style={{ borderLeft: "6px solid #EF4444" }}
             >
               <FaEnvelope size={28} color="#EF4444" />
@@ -50,10 +58,10 @@ const Connect = () => {
 
           {contact.linkedin && (
             <a
-              href={contact.linkedin}
+              href={ensureAbsoluteUrl(contact.linkedin)}
               target="_blank"
               rel="noreferrer"
-              className="card"
+              className="card linkedin"
               style={{ borderLeft: "6px solid #0A66C2" }}
             >
               <FaLinkedin size={28} color="#0A66C2" />
@@ -64,10 +72,10 @@ const Connect = () => {
 
           {contact.instagram && (
             <a
-              href={contact.instagram}
+              href={ensureAbsoluteUrl(contact.instagram)}
               target="_blank"
               rel="noreferrer"
-              className="card"
+              className="card instagram"
               style={{ borderLeft: "6px solid #E1306C" }}
             >
               <FaInstagram size={28} color="#E1306C" />
@@ -78,10 +86,10 @@ const Connect = () => {
 
           {contact.whatsapp && (
             <a
-              href={contact.whatsapp}
+              href={ensureAbsoluteUrl(contact.whatsapp)}
               target="_blank"
               rel="noreferrer"
-              className="card"
+              className="card whatsapp"
               style={{ borderLeft: "6px solid #25D366" }}
             >
               <FaWhatsapp size={28} color="#25D366" />

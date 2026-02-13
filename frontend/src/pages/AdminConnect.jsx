@@ -50,37 +50,55 @@ const AdminConnect = () => {
     <div className="dashboard-content">
       <h1>Edit Contact Details</h1>
 
-      <input
-        name="email"
-        value={form.email ?? ""}
-        placeholder="Email"
-        onChange={handleChange}
-      />
+      <div className="card" style={{ maxWidth: "600px", marginTop: "2rem" }}>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <label style={{ display: "block", marginBottom: "8px" }}>Email</label>
+          <input
+            name="email"
+            value={form.email ?? ""}
+            placeholder="e.g. contact@codestorm.com"
+            onChange={handleChange}
+            style={{ width: "100%" }}
+          />
+        </div>
 
-      <input
-        name="linkedin"
-        value={form.linkedin ?? ""}
-        placeholder="LinkedIn URL"
-        onChange={handleChange}
-      />
+        <div style={{ marginBottom: "1.5rem" }}>
+          <label style={{ display: "block", marginBottom: "8px" }}>LinkedIn URL</label>
+          <input
+            name="linkedin"
+            value={form.linkedin ?? ""}
+            placeholder="e.g. linkedin.com/company/codestorm"
+            onChange={handleChange}
+            style={{ width: "100%" }}
+          />
+        </div>
 
-      <input
-        name="instagram"
-        value={form.instagram ?? ""}
-        placeholder="Instagram URL"
-        onChange={handleChange}
-      />
+        <div style={{ marginBottom: "1.5rem" }}>
+          <label style={{ display: "block", marginBottom: "8px" }}>Instagram URL</label>
+          <input
+            name="instagram"
+            value={form.instagram ?? ""}
+            placeholder="e.g. instagram.com/codestorm"
+            onChange={handleChange}
+            style={{ width: "100%" }}
+          />
+        </div>
 
-      <input
-        name="whatsapp"
-        value={form.whatsapp ?? ""}
-        placeholder="WhatsApp Group Link"
-        onChange={handleChange}
-      />
+        <div style={{ marginBottom: "1.5rem" }}>
+          <label style={{ display: "block", marginBottom: "8px" }}>WhatsApp Group Link</label>
+          <input
+            name="whatsapp"
+            value={form.whatsapp ?? ""}
+            placeholder="e.g. chat.whatsapp.com/..."
+            onChange={handleChange}
+            style={{ width: "100%" }}
+          />
+        </div>
 
-      <button className="logout-btn" type="button" onClick={save}>
-        Save Contact Details
-      </button>
+        <button className="logout-btn" type="button" onClick={save} style={{ width: "100%", marginTop: "1rem" }}>
+          Save Contact Details
+        </button>
+      </div>
     </div>
   );
 };
