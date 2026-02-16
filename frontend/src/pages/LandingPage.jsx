@@ -27,12 +27,12 @@ const LandingPage = () => {
                 <StudentEvents />
             </section>
 
-            <section id="contact" ref={contactRef} style={{ scrollMarginTop: "100px" }}>
-                <Connect />
-            </section>
-
             <section id="about" ref={aboutRef} style={{ scrollMarginTop: "100px" }}>
                 <About />
+            </section>
+
+            <section id="contact" ref={contactRef} style={{ scrollMarginTop: "100px" }}>
+                <Connect />
             </section>
         </div>
     );

@@ -59,8 +59,8 @@ const Navbar = () => {
       {/* LINKS */}
       <div className={`nav-links ${showMobileMenu ? "active" : ""}`}>
         <Link to="/#events" onClick={() => setShowMobileMenu(false)}>Events</Link>
-        <Link to="/#contact" onClick={() => setShowMobileMenu(false)}>Contact</Link>
         <Link to="/#about" onClick={() => setShowMobileMenu(false)}>About</Link>
+        <Link to="/#contact" onClick={() => setShowMobileMenu(false)}>Contact</Link>
         <Link to="/contests" onClick={() => setShowMobileMenu(false)}>Contests</Link>
         {role !== "admin" && <Link to="/discussion" onClick={() => setShowMobileMenu(false)}>Discussion</Link>}
 

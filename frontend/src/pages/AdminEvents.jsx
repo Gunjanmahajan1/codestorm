@@ -6,9 +6,13 @@ import "../styles/dashboard.css";
 const AdminEvents = () => {
   // ---------------- STATE ----------------
   const [events, setEvents] = useState([]);
+  const [sliderImages, setSliderImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingEventId, setEditingEventId] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
+  const [sliderImage, setSliderImage] = useState(null);
+  const [sliderOrder, setSliderOrder] = useState(0);
+  const [uploadingSlider, setUploadingSlider] = useState(false);
   const fileInputRef = useRef(null);
 
 
@@ -27,13 +31,18 @@ const AdminEvents = () => {
     try {
       const res = await api.get("/api/events");
       setEvents(res.data.data || res.data);
-      setLoading(false);
     }
     catch (err) {
       console.error("Failed to fetch events");
-      console.error("STATUS:", err.response?.status);
-      console.error("DATA:", err.response?.data);
-      setLoading(false);
+    }
+  };
+
+  const fetchSliderImages = async () => {
+    try {
+      const res = await api.get("/api/events-slider");
+      setSliderImages(res.data.data || []);
+    } catch (err) {
+      console.error("Failed to load slider images", err);
     }
   };
 
@@ -100,13 +109,48 @@ const AdminEvents = () => {
       fetchEvents();
     } catch (error) {
       console.error("Failed to save event");
-      console.error("STATUS:", error.response?.status);
-      console.error("DATA:", error.response?.data);
-
       alert(
         error.response?.data?.message ||
-        "Create/Edit failed – check backend route or validation"
+        "Create/Edit failed"
       );
+    }
+  };
+
+  const handleSliderSubmit = async (e) => {
+    e.preventDefault();
+    if (!sliderImage) return alert("Please select an image");
+
+    setUploadingSlider(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", sliderImage);
+      formData.append("order", sliderOrder);
+
+      await api.post("/api/events-slider", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      setSliderImage(null);
+      setSliderOrder(0);
+      e.target.reset();
+      fetchSliderImages();
+    } catch (error) {
+      console.error("Failed to upload slider image", error);
+      alert("Failed to upload image");
+    } finally {
+      setUploadingSlider(false);
+    }
+  };
+
+  const handleDeleteSlider = async (id) => {
+    if (!window.confirm("Delete this slider image?")) return;
+    try {
+      await api.delete(`/api/events-slider/${id}`);
+      fetchSliderImages();
+    } catch (error) {
+      console.error("Failed to delete slider image", error);
     }
   };
 
@@ -129,7 +173,12 @@ const AdminEvents = () => {
 
   // ---------------- EFFECT ----------------
   useEffect(() => {
-    fetchEvents();
+    const loadAll = async () => {
+      setLoading(true);
+      await Promise.all([fetchEvents(), fetchSliderImages()]);
+      setLoading(false);
+    };
+    loadAll();
   }, []);
 
   // ---------------- UI ----------------
@@ -138,6 +187,76 @@ const AdminEvents = () => {
       <div className="dashboard-content">
         <h1>Manage Events</h1>
         <p>Create, view, and delete club events.</p>
+
+        {/* 1st: SLIDER PHOTOS */}
+        <div className="card" style={{ marginTop: "2rem" }}>
+          <h3>1. Events Page Slider (Top Images)</h3>
+          <p style={{ fontSize: "0.9rem", opacity: 0.7, marginBottom: "1.5rem" }}>Upload multiple images that will appear as a carousel at the top of the events page.</p>
+
+          <form onSubmit={handleSliderSubmit} style={{ display: "flex", gap: "1rem", alignItems: "flex-end", flexWrap: "wrap", marginBottom: "2rem" }}>
+            <div style={{ flex: 1, minWidth: "200px" }}>
+              <label style={{ display: "block", marginBottom: "5px", fontSize: "0.85rem" }}>Upload Image</label>
+              <input
+                type="file"
+                onChange={(e) => setSliderImage(e.target.files[0])}
+                accept="image/*"
+                required
+                style={{ color: "white", width: "100%" }}
+              />
+            </div>
+            <div style={{ width: "100px" }}>
+              <label style={{ display: "block", marginBottom: "5px", fontSize: "0.85rem" }}>Order</label>
+              <input
+                type="number"
+                value={sliderOrder}
+                onChange={(e) => setSliderOrder(e.target.value)}
+                style={{ padding: "8px", width: "100%" }}
+              />
+            </div>
+            <button className="logout-btn" type="submit" disabled={uploadingSlider} style={{ height: "40px" }}>
+              {uploadingSlider ? "Uploading..." : "Add Photo"}
+            </button>
+          </form>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "1rem" }}>
+            {sliderImages.map((img) => (
+              <div key={img._id} style={{ position: "relative", borderRadius: "12px", overflow: "hidden", border: "1px solid #334155", background: "#1e293b" }}>
+                <img
+                  src={`${API_BASE_URL}${img.imageUrl}`}
+                  alt="Slider"
+                  style={{ width: "100%", height: "100px", objectFit: "cover" }}
+                />
+                <div style={{ padding: "5px", textAlign: "center", fontSize: "12px" }}>Order: {img.order}</div>
+                <button
+                  onClick={() => handleDeleteSlider(img._id)}
+                  style={{
+                    position: "absolute",
+                    top: "5px",
+                    right: "5px",
+                    background: "rgba(220, 38, 38, 0.9)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "50%",
+                    width: "24px",
+                    height: "24px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 2nd: MANAGE INDIVIDUAL EVENTS */}
+        <div style={{ marginTop: "3rem" }}>
+          <h2 style={{ marginBottom: "1rem" }}>2. Individual Events</h2>
+        </div>
 
         {/* CREATE EVENT FORM */}
         <form

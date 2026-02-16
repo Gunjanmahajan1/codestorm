@@ -5,6 +5,7 @@ import "../styles/dashboard.css";
 const About = () => {
   const [members, setMembers] = useState([]);
   const [sliderImages, setSliderImages] = useState([]);
+  const [aboutContent, setAboutContent] = useState({ committeeTitle: "Core Committee 2025-26" });
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -24,6 +25,17 @@ const About = () => {
       })
       .catch((err) => {
         console.error("Failed to fetch slider images", err);
+      });
+
+    // Fetch about content (title)
+    api.get("/api/about-content")
+      .then((res) => {
+        if (res.data.data) {
+          setAboutContent(res.data.data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch about content", err);
       });
   }, []);
 
@@ -175,7 +187,7 @@ const About = () => {
 
         {/* 2nd: CORE COMMITTEE TABLES */}
         <h2 style={{ marginTop: "3rem", marginBottom: "1rem", textAlign: "center", color: "#22c55e" }}>
-          Core Committee 2025-26
+          {aboutContent.committeeTitle}
         </h2>
 
         {members.length > 0 ? (

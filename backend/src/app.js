@@ -55,6 +55,8 @@ app.use("/api/social", socialRoutes);
 app.use("/api/external-contests", externalContestRoutes);
 app.use("/api/core-team", require("./routes/coreTeam.routes"));
 app.use("/api/about-slider", require("./routes/aboutSlider.routes"));
+app.use("/api/about-content", require("./routes/aboutContent.routes"));
+app.use("/api/events-slider", require("./routes/eventSlider.routes"));
 /* -------------------- HEALTH CHECK -------------------- */
 
 app.get("/", (req, res) => {

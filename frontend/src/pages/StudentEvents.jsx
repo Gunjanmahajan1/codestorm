@@ -5,22 +5,46 @@ import { FaTimes } from "react-icons/fa";
 
 const StudentEvents = () => {
   const [events, setEvents] = useState([]);
+  const [sliderImages, setSliderImages] = useState([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
-    fetchEvents();
+    const loadAll = async () => {
+      setLoading(true);
+      await Promise.all([fetchEvents(), fetchSliderImages()]);
+      setLoading(false);
+    };
+    loadAll();
   }, []);
+
+  const fetchSliderImages = async () => {
+    try {
+      const res = await api.get("/api/events-slider");
+      setSliderImages(res.data.data || []);
+    } catch (err) {
+      console.error("Failed to fetch slider images", err);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
       const res = await api.get("/api/events/public");
       setEvents(res.data.data || res.data);
-      setLoading(false);
     } catch (error) {
       console.error("Failed to load events", error);
-      setLoading(false);
     }
+  };
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % sliderImages.length);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide(
+      (prev) => (prev - 1 + sliderImages.length) % sliderImages.length
+    );
   };
 
   return (
@@ -28,6 +52,141 @@ const StudentEvents = () => {
       <div className="dashboard-content">
         <h1>CodeStorm Events 🚀</h1>
         <p>Explore our latest workshops, contests, and tech events.</p>
+
+        {/* SLIDING PHOTOS */}
+        {sliderImages.length > 0 && (
+          <div
+            style={{
+              marginTop: "2rem",
+              position: "relative",
+              width: "100%",
+              maxWidth: "1000px",
+              height: "400px",
+              margin: "2rem auto",
+              borderRadius: "20px",
+              overflow: "hidden",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            {sliderImages.map((img, index) => (
+              <div
+                key={img._id}
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  opacity: index === currentSlide ? 1 : 0,
+                  transition: "opacity 0.8s ease-in-out",
+                }}
+              >
+                <img
+                  src={`${API_BASE_URL}${img.imageUrl}`}
+                  alt={`Slide ${index}`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: "100px",
+                    background: "linear-gradient(transparent, rgba(0,0,0,0.8))",
+                  }}
+                />
+              </div>
+            ))}
+
+            {/* Navigation Arrows */}
+            {sliderImages.length > 1 && (
+              <>
+                <button
+                  onClick={prevSlide}
+                  style={{
+                    position: "absolute",
+                    left: "20px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "rgba(0,0,0,0.5)",
+                    color: "white",
+                    border: "none",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    cursor: "pointer",
+                    zIndex: 15,
+                    fontSize: "18px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "0.2s",
+                  }}
+                >
+                  ❮
+                </button>
+                <button
+                  onClick={nextSlide}
+                  style={{
+                    position: "absolute",
+                    right: "20px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "rgba(0,0,0,0.5)",
+                    color: "white",
+                    border: "none",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    cursor: "pointer",
+                    zIndex: 15,
+                    fontSize: "18px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "0.2s",
+                  }}
+                >
+                  ❯
+                </button>
+              </>
+            )}
+
+            {/* Slide Indicators */}
+            <div
+              style={{
+                position: "absolute",
+                bottom: "20px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                display: "flex",
+                gap: "10px",
+                zIndex: 10,
+              }}
+            >
+              {sliderImages.map((_, index) => (
+                <div
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background:
+                      index === currentSlide
+                        ? "#22c55e"
+                        : "rgba(255,255,255,0.5)",
+                    cursor: "pointer",
+                    transition: "0.3s",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <p>Loading events...</p>

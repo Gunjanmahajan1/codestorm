@@ -5,9 +5,11 @@ import "../styles/dashboard.css";
 const AdminAbout = () => {
     const [members, setMembers] = useState([]);
     const [sliderImages, setSliderImages] = useState([]);
+    const [aboutContent, setAboutContent] = useState({ committeeTitle: "" });
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [savingContent, setSavingContent] = useState(false);
 
     const [form, setForm] = useState({
         designation: "",
@@ -36,10 +38,21 @@ const AdminAbout = () => {
         }
     };
 
+    const fetchAboutContent = async () => {
+        try {
+            const res = await api.get("/api/about-content");
+            if (res.data.data) {
+                setAboutContent(res.data.data);
+            }
+        } catch (err) {
+            console.error("Failed to load about content", err);
+        }
+    };
+
     useEffect(() => {
         const loadAll = async () => {
             setLoading(true);
-            await Promise.all([fetchMembers(), fetchSliderImages()]);
+            await Promise.all([fetchMembers(), fetchSliderImages(), fetchAboutContent()]);
             setLoading(false);
         };
         loadAll();
@@ -47,6 +60,20 @@ const AdminAbout = () => {
 
     const handleInputChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    const handleContentSubmit = async (e) => {
+        e.preventDefault();
+        setSavingContent(true);
+        try {
+            await api.put("/api/about-content", { committeeTitle: aboutContent.committeeTitle });
+            alert("About content updated!");
+        } catch (error) {
+            console.error("Failed to save about content", error);
+            alert("Failed to save about content");
+        } finally {
+            setSavingContent(false);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -132,8 +159,31 @@ const AdminAbout = () => {
                 <h1>Manage About Page Content</h1>
                 <p>Manage slider photos and core committee members for the About page.</p>
 
-                {/* 1st: SLIDER PHOTOS */}
+                {/* 0: ABOUT PAGE SETTINGS (Title) */}
                 <div className="card" style={{ marginTop: "2rem" }}>
+                    <h3>0. About Page Settings</h3>
+                    <p style={{ fontSize: "0.9rem", opacity: 0.7, marginBottom: "1.5rem" }}>Update the section titles for the About page.</p>
+
+                    <form onSubmit={handleContentSubmit} style={{ display: "flex", gap: "1rem", alignItems: "flex-end", flexWrap: "wrap", marginBottom: "1rem" }}>
+                        <div style={{ flex: 1, minWidth: "300px" }}>
+                            <label style={{ display: "block", marginBottom: "5px", fontSize: "0.85rem" }}>Committee Section Title</label>
+                            <input
+                                type="text"
+                                value={aboutContent.committeeTitle}
+                                onChange={(e) => setAboutContent({ ...aboutContent, committeeTitle: e.target.value })}
+                                placeholder="e.g. Core Committee 2025-26"
+                                required
+                                style={{ padding: "10px", width: "100%" }}
+                            />
+                        </div>
+                        <button className="logout-btn" type="submit" disabled={savingContent} style={{ height: "40px" }}>
+                            {savingContent ? "Saving..." : "Update Title"}
+                        </button>
+                    </form>
+                </div>
+
+                {/* 1st: SLIDER PHOTOS */}
+                <div className="card" style={{ marginTop: "2.5rem" }}>
                     <h3>1. Sliding Photos (Carousel)</h3>
                     <p style={{ fontSize: "0.9rem", opacity: 0.7, marginBottom: "1.5rem" }}>Upload photos that will scroll at the top of the About page.</p>
 
