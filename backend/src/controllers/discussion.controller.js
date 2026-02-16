@@ -43,16 +43,22 @@ exports.postMessage = async (req, res, next) => {
     }
 
     const { content } = req.body;
+    let image = "";
 
-    if (!content || !content.trim()) {
+    if (req.file) {
+      image = `/uploads/${req.file.filename}`;
+    }
+
+    if ((!content || !content.trim()) && !image) {
       return res.status(400).json({
         success: false,
-        message: "Message content is required",
+        message: "Message content or image is required",
       });
     }
 
     const message = await Discussion.create({
       content,
+      image,
       author: req.user._id,
       role: req.user.role,
     });

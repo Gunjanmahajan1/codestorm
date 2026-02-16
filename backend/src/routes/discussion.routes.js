@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const { protect, adminOnly } = require("../middleware/auth.middleware");
+const upload = require("../middleware/upload.middleware");
 
 const {
   getMessages,
@@ -34,6 +35,7 @@ router.put(
 router.post(
   "/",
   protect,
+  upload.single("image"),
   postMessage
 );
 

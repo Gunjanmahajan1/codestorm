@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/codestorm_logo.png";
 import "../styles/dashboard.css";
 import { useEffect, useState, useRef } from "react";
+import api from "../services/api";
 
 const Navbar = () => {
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -13,11 +14,63 @@ const Navbar = () => {
   const location = useLocation();
   const adminMenuRef = useRef(null);
 
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
+  const lastMessageId = useRef(localStorage.getItem("lastMsgId"));
+
   useEffect(() => {
-    setToken(localStorage.getItem("token"));
+    const storedToken = localStorage.getItem("token");
+    setToken(storedToken);
     setRole(localStorage.getItem("role"));
+    setUser(JSON.parse(localStorage.getItem("user")));
     setShowMobileMenu(false); // Close mobile menu on route change
+
+    // Request notification permission
+    if (storedToken && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
   }, [location]);
+
+  // Global Notification Polling
+  useEffect(() => {
+    if (!token) return;
+
+    const checkNewMessages = async () => {
+      // Don't notify if already on discussion pages (they handle their own notifications)
+      if (location.pathname === "/discussion" || location.pathname === "/admin/discussion") return;
+
+      try {
+        const res = await api.get("/api/discussion");
+        const messages = res.data.data || [];
+
+        if (messages.length > 0) {
+          const latestMsg = messages[messages.length - 1];
+          const currentUserId = user?.id || user?._id;
+
+          if (lastMessageId.current && latestMsg._id !== lastMessageId.current) {
+            if (latestMsg.author?._id !== currentUserId) {
+              if (Notification.permission === "granted") {
+                new Notification(`New message from ${latestMsg.author?.name || "User"}`, {
+                  body: latestMsg.content || "Sent an image",
+                  icon: "/favicon.ico",
+                });
+              }
+            }
+          }
+          lastMessageId.current = latestMsg._id;
+          localStorage.setItem("lastMsgId", latestMsg._id);
+        }
+      } catch (err) {
+        console.error("Global notification check failed", err);
+      }
+    };
+
+    // Initial check
+    checkNewMessages();
+
+    // Poll every 10 seconds for site-wide notifications
+    const interval = setInterval(checkNewMessages, 10000);
+    return () => clearInterval(interval);
+  }, [token, location.pathname, user]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {

@@ -4,9 +4,14 @@ const discussionSchema = new mongoose.Schema(
   {
     content: {
       type: String,
-      required: true,
+      required: false, // Changed to false because a message can be just an image
       trim: true,
       maxlength: 1000,
+    },
+
+    image: {
+      type: String,
+      required: false,
     },
 
     author: {
