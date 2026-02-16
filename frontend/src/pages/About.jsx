@@ -191,30 +191,25 @@ const About = () => {
         </h2>
 
         {members.length > 0 ? (
-          <div className="card" style={{ padding: "0", overflow: "hidden", border: "none", maxWidth: "800px", margin: "0 auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "400px" }}>
-              <thead>
-                <tr style={{ background: "#22c55e", color: "#020617", textAlign: "left" }}>
-                  <th style={{ padding: "12px 20px", width: "40%" }}>Designation</th>
-                  <th style={{ padding: "12px 20px", width: "60%" }}>Name of Member</th>
-                </tr>
-              </thead>
-              <tbody>
-                {members.map((m, index) => (
-                  <tr
-                    key={m._id}
-                    style={{
-                      background: index % 2 === 0 ? "#f9f9f9" : "#ffffff",
-                      color: "#333",
-                      borderBottom: "1px solid #eee"
-                    }}
-                  >
-                    <td style={{ padding: "12px 20px", fontWeight: "600" }}>{m.designation}</td>
-                    <td style={{ padding: "12px 20px", fontWeight: "600" }}>{m.name}</td>
+          <div className="core-committee-container">
+            <div className="table-wrapper">
+              <table className="committee-table">
+                <thead>
+                  <tr>
+                    <th>Designation</th>
+                    <th>Name of Member</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {members.map((m, index) => (
+                    <tr key={m._id}>
+                      <td className="designation-cell">{m.designation}</td>
+                      <td className="name-cell">{m.name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
           <p style={{ textAlign: "center", fontStyle: "italic", opacity: 0.7 }}>

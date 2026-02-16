@@ -310,25 +310,27 @@ const AdminAbout = () => {
                     {loading ? (
                         <p>Loading committee...</p>
                     ) : (
-                        <div style={{ overflowX: "auto" }}>
-                            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <div className="table-wrapper">
+                            <table className="committee-table admin-table">
                                 <thead>
-                                    <tr style={{ background: "#22c55e", color: "#020617" }}>
-                                        <th style={{ padding: "12px", textAlign: "left" }}>Order</th>
-                                        <th style={{ padding: "12px", textAlign: "left" }}>Designation</th>
-                                        <th style={{ padding: "12px", textAlign: "left" }}>Name</th>
-                                        <th style={{ padding: "12px", textAlign: "right" }}>Actions</th>
+                                    <tr>
+                                        <th style={{ width: "10%" }}>Order</th>
+                                        <th style={{ width: "30%" }}>Designation</th>
+                                        <th style={{ width: "35%" }}>Name</th>
+                                        <th style={{ width: "25%", textAlign: "right" }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {members.map((m) => (
-                                        <tr key={m._id} style={{ borderBottom: "1px solid #334155" }}>
-                                            <td style={{ padding: "12px" }}>{m.order}</td>
-                                            <td style={{ padding: "12px", fontWeight: "600", color: "#22c55e" }}>{m.designation}</td>
-                                            <td style={{ padding: "12px" }}>{m.name}</td>
-                                            <td style={{ padding: "12px", textAlign: "right" }}>
-                                                <button onClick={() => handleEdit(m)} style={{ marginRight: "0.5rem", background: "#2563EB", color: "white", border: "none", padding: "6px 12px", borderRadius: "6px" }}>Edit</button>
-                                                <button onClick={() => handleDelete(m._id)} style={{ background: "#DC2626", color: "white", border: "none", padding: "6px 12px", borderRadius: "6px" }}>Delete</button>
+                                        <tr key={m._id}>
+                                            <td>{m.order}</td>
+                                            <td className="designation-cell">{m.designation}</td>
+                                            <td className="name-cell">{m.name}</td>
+                                            <td style={{ textAlign: "right" }}>
+                                                <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", flexWrap: "wrap" }}>
+                                                    <button onClick={() => handleEdit(m)} style={{ background: "#2563EB", color: "white", border: "none", padding: "6px 12px", borderRadius: "6px" }}>Edit</button>
+                                                    <button onClick={() => handleDelete(m._id)} style={{ background: "#DC2626", color: "white", border: "none", padding: "6px 12px", borderRadius: "6px" }}>Delete</button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
