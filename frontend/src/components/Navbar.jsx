@@ -16,27 +16,37 @@ const Navbar = () => {
 
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const lastMessageId = useRef(localStorage.getItem("lastMsgId"));
+  const lastEventId = useRef(localStorage.getItem("lastEventId"));
 
   useEffect(() => {
+    // Only update these if they actually changed in localStorage
     const storedToken = localStorage.getItem("token");
-    setToken(storedToken);
-    setRole(localStorage.getItem("role"));
-    setUser(JSON.parse(localStorage.getItem("user")));
-    setShowMobileMenu(false); // Close mobile menu on route change
+    if (storedToken !== token) setToken(storedToken);
+    
+    const storedRole = localStorage.getItem("role");
+    if (storedRole !== role) setRole(storedRole);
+    
+    const storedUser = localStorage.getItem("user");
+    const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+    if (JSON.stringify(parsedUser) !== JSON.stringify(user)) setUser(parsedUser);
 
-    // Request notification permission
-    if (storedToken && "Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
+    setShowMobileMenu(false); // Close mobile menu on route change
   }, [location]);
 
-  // Global Notification Polling
+  // Request notification permission once on mount or when permission is default
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Global Notification Polling - optimized to only depend on token/user
   useEffect(() => {
     if (!token) return;
 
     const checkNewMessages = async () => {
-      // Don't notify if already on discussion pages (they handle their own notifications)
-      if (location.pathname === "/discussion" || location.pathname === "/admin/discussion") return;
+      // Don't notify if already on discussion pages (checked INSIDE function to avoid dependency)
+      if (window.location.pathname === "/discussion" || window.location.pathname === "/admin/discussion") return;
 
       try {
         const res = await api.get("/api/discussion");
@@ -49,10 +59,16 @@ const Navbar = () => {
           if (lastMessageId.current && latestMsg._id !== lastMessageId.current) {
             if (latestMsg.author?._id !== currentUserId) {
               if (Notification.permission === "granted") {
-                new Notification(`New message from ${latestMsg.author?.name || "User"}`, {
+                const notif = new Notification(`💬 New message from ${latestMsg.author?.name || "User"}`, {
                   body: latestMsg.content || "Sent an image",
-                  icon: "/favicon.ico",
+                  icon: logo,
+                  badge: logo,
+                  tag: `msg-${latestMsg._id}`,
                 });
+                notif.onclick = () => {
+                  window.focus();
+                  navigate("/discussion");
+                };
               }
             }
           }
@@ -64,13 +80,51 @@ const Navbar = () => {
       }
     };
 
-    // Initial check
-    checkNewMessages();
+    const checkNewEvents = async () => {
+      try {
+        const res = await api.get("/api/events/public");
+        const events = res.data.data || res.data || [];
 
-    // Poll every 10 seconds for site-wide notifications
-    const interval = setInterval(checkNewMessages, 10000);
-    return () => clearInterval(interval);
-  }, [token, location.pathname, user]);
+        if (events.length > 0) {
+          const latestEvent = events[0];
+          if (!latestEvent?._id) return;
+
+          if (lastEventId.current && latestEvent._id !== lastEventId.current) {
+            if (Notification.permission === "granted") {
+              const notif = new Notification(`🚀 New Event: ${latestEvent.title}`, {
+                body: latestEvent.description
+                  ? latestEvent.description.substring(0, 100)
+                  : "A new event has been posted on CodeStorm!",
+                icon: logo,
+                badge: logo,
+                tag: `event-${latestEvent._id}`,
+              });
+              notif.onclick = () => {
+                window.focus();
+                scrollToSection("#events");
+              };
+            }
+          }
+          lastEventId.current = latestEvent._id;
+          localStorage.setItem("lastEventId", latestEvent._id);
+        }
+      } catch (err) {
+        console.error("Global event check failed", err);
+      }
+    };
+
+    // Initial checks
+    checkNewMessages();
+    checkNewEvents();
+
+    const msgInterval = setInterval(checkNewMessages, 20000); // 20s
+    const eventInterval = setInterval(checkNewEvents, 45000); // 45s
+
+    return () => {
+      clearInterval(msgInterval);
+      clearInterval(eventInterval);
+    };
+  }, [token, user]); // Removed location.pathname to prevent restart on every route change
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -91,14 +145,32 @@ const Navbar = () => {
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
-    navigate("/login");
+    localStorage.removeItem("user");
+    setToken(null);
+    setRole(null);
+    setUser(null);
+    navigate("/");
+  };
+
+  const homeLink = token
+    ? (role === "admin" ? "/dashboard" : "/discussion")
+    : "/";
+
+  const scrollToSection = (hash) => {
+    setShowMobileMenu(false);
+    if (location.pathname !== "/") {
+      navigate("/" + hash);
+    } else {
+      const el = document.querySelector(hash);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   return (
     <nav className="navbar">
       {/* LOGO */}
       <h2>
-        <Link to="/" style={{ color: "#22c55e", textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
+        <Link to={homeLink} style={{ color: "#22c55e", textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
           <img src={logo} alt="CodeStorm Logo" style={{ height: "40px", width: "40px", borderRadius: "50%" }} />
           CodeStorm
         </Link>
@@ -111,9 +183,11 @@ const Navbar = () => {
 
       {/* LINKS */}
       <div className={`nav-links ${showMobileMenu ? "active" : ""}`}>
-        <Link to="/#events" onClick={() => setShowMobileMenu(false)}>Events</Link>
-        <Link to="/#about" onClick={() => setShowMobileMenu(false)}>About</Link>
-        <Link to="/#contact" onClick={() => setShowMobileMenu(false)}>Contact</Link>
+        {/* Public Links */}
+        <span className="nav-link" onClick={() => scrollToSection("#events")}>Events</span>
+        <span className="nav-link" onClick={() => scrollToSection("#about")}>About</span>
+        <span className="nav-link" onClick={() => scrollToSection("#core-committee")}>Core Committee</span>
+        <span className="nav-link" onClick={() => scrollToSection("#contact")}>Contact Us</span>
         <Link to="/contests" onClick={() => setShowMobileMenu(false)}>Contests</Link>
         {role !== "admin" && <Link to="/discussion" onClick={() => setShowMobileMenu(false)}>Discussion</Link>}
 
@@ -128,15 +202,15 @@ const Navbar = () => {
               Admin <span>▾</span>
             </button>
 
-            {/* DROPDOWN */}
+            {/* DROPDOWN - Sequence updated */}
             {showAdminMenu && (
               <div className="admin-dropdown-menu">
-                <Link className="dropdown-link" to="/dashboard" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>Dashboard</Link>
                 <Link className="dropdown-link" to="/admin/events" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>Events</Link>
-                <Link className="dropdown-link" to="/admin/connect" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>Contact</Link>
                 <Link className="dropdown-link" to="/admin/about" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>About</Link>
+                <Link className="dropdown-link" to="/admin/connect" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>Contact Us</Link>
                 <Link className="dropdown-link" to="/admin/contests" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>Contests</Link>
                 <Link className="dropdown-link" to="/admin/discussion" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>Discussion</Link>
+                <Link className="dropdown-link" to="/dashboard" onClick={() => { setShowAdminMenu(false); setShowMobileMenu(false); }}>Dashboard</Link>
               </div>
             )}
           </div>

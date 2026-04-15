@@ -185,40 +185,8 @@ const About = () => {
           </div>
         )}
 
-        {/* 2nd: CORE COMMITTEE TABLES */}
-        <h2 style={{ marginTop: "3rem", marginBottom: "1rem", textAlign: "center", color: "#22c55e" }}>
-          {aboutContent.committeeTitle}
-        </h2>
-
-        {members.length > 0 ? (
-          <div className="core-committee-container">
-            <div className="table-wrapper">
-              <table className="committee-table">
-                <thead>
-                  <tr>
-                    <th>Designation</th>
-                    <th>Name of Member</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {members.map((m, index) => (
-                    <tr key={m._id}>
-                      <td className="designation-cell">{m.designation}</td>
-                      <td className="name-cell">{m.name}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        ) : (
-          <p style={{ textAlign: "center", fontStyle: "italic", opacity: 0.7 }}>
-            Committee members to be announced soon.
-          </p>
-        )}
-
-        {/* 3rd: ABOUT WRITTEN PARA */}
-        <div style={{ marginTop: "4rem", maxWidth: "900px", margin: "4rem auto" }}>
+        {/* 2nd: ABOUT WRITTEN PARA */}
+        <div id="about" style={{ marginTop: "4rem", maxWidth: "900px", margin: "4rem auto" }}>
           <h2 style={{ color: "#22c55e", marginBottom: "1.5rem" }}>CodeStorm Club MESCOE</h2>
 
           <div style={{ marginBottom: "2rem" }}>
@@ -258,6 +226,40 @@ const About = () => {
               Founder: <span style={{ color: "#22c55e" }}>Sandesh Pabitwar</span>
             </p>
           </div>
+        </div>
+
+        {/* 3rd: CORE COMMITTEE TABLES */}
+        <div id="core-committee">
+          <h2 style={{ marginTop: "3rem", marginBottom: "1rem", textAlign: "center", color: "#22c55e" }}>
+            {aboutContent.committeeTitle}
+          </h2>
+
+          {members.length > 0 ? (
+            <div className="core-committee-container">
+              <div className="table-wrapper">
+                <table className="committee-table">
+                  <thead>
+                    <tr>
+                      <th>Designation</th>
+                      <th>Name of Member</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {members.map((m, index) => (
+                      <tr key={m._id}>
+                        <td className="designation-cell">{m.designation}</td>
+                        <td className="name-cell">{m.name}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <p style={{ textAlign: "center", fontStyle: "italic", opacity: 0.7 }}>
+              Committee members to be announced soon.
+            </p>
+          )}
         </div>
       </div>
     </div>

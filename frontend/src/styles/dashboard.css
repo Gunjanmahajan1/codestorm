@@ -211,13 +211,15 @@ select {
   position: relative;
 }
 
-.navbar a {
+.navbar a, .nav-link {
   color: white;
   font-weight: 700;
   text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s;
 }
 
-.navbar a:hover {
+.navbar a:hover, .nav-link:hover {
   color: var(--green);
 }
 

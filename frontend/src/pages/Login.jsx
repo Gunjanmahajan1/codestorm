@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../services/api";
 import { useNavigate, Link } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -10,6 +10,18 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
+    if (token) {
+      if (role === "admin") {
+        navigate("/dashboard");
+      } else {
+        navigate("/discussion");
+      }
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
