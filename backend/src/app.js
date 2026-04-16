@@ -2,19 +2,38 @@ const express = require("express");
 const path = require("path");
 const cors = require("cors");
 const morgan = require("morgan");
+const connectDB = require("./config/db");
 
+// Connect to Database
+connectDB();
 
 const app = express();
 
+
 /* -------------------- GLOBAL MIDDLEWARES -------------------- */
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      process.env.FRONTEND_URL,
-    ].filter(Boolean),
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g., mobile apps, curl)
+      if (!origin) return callback(null, true);
+
+      // Allow exact matches
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      // Allow any Vercel preview deployment for this project
+      if (/^https:\/\/codestorm(-git-[a-z0-9-]+-gunjanmahajan1s-projects|(-[a-z0-9]+)*(-gunjanmahajan1s-projects)?)\.vercel\.app$/.test(origin)) {
+        return callback(null, true);
+      }
+
+      callback(new Error(`CORS blocked: ${origin}`));
+    },
     credentials: true,
   })
 );

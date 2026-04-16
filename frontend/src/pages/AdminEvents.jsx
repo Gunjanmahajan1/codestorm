@@ -1,6 +1,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import api, { API_BASE_URL } from "../services/api";
+import { getImageUrl } from "../utils/imageUrl";
 import "../styles/dashboard.css";
 
 const AdminEvents = () => {
@@ -222,7 +223,7 @@ const AdminEvents = () => {
             {sliderImages.map((img) => (
               <div key={img._id} style={{ position: "relative", borderRadius: "12px", overflow: "hidden", border: "1px solid #334155", background: "#1e293b" }}>
                 <img
-                  src={`${API_BASE_URL}${img.imageUrl}`}
+                  src={getImageUrl(img.imageUrl)}
                   alt="Slider"
                   style={{ width: "100%", height: "100px", objectFit: "cover" }}
                 />
@@ -267,7 +268,7 @@ const AdminEvents = () => {
           <h3>{editingEventId ? "Edit Event" : "Create New Event"}</h3>
           {form.imageUrl && (
             <img
-              src={form.imageUrl}
+              src={getImageUrl(form.imageUrl)}
               alt={form.title}
               style={{
                 width: "100%",
@@ -419,7 +420,7 @@ const AdminEvents = () => {
                   {(event.images && event.images.length > 0 ? event.images : event.image ? [event.image] : []).map((img, idx) => (
                     <div key={idx} style={{ position: "relative", width: "120px", height: "80px", flexShrink: 0 }}>
                       <img
-                        src={img.startsWith('http') ? img : `${API_BASE_URL}${img}`}
+                        src={getImageUrl(img)}
                         alt={`${event.title}-${idx}`}
                         style={{
                           width: "100%",

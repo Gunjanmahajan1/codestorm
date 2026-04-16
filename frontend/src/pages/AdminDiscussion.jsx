@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import api from "../services/api";
 import { FaPaperPlane, FaCheck, FaTrash, FaLock, FaUnlock, FaPlus, FaCamera, FaImage, FaTimes } from "react-icons/fa";
 import { API_BASE_URL } from "../services/api";
+import { getImageUrl } from "../utils/imageUrl";
 import "../styles/dashboard.css";
 
 const AdminDiscussion = () => {
@@ -267,10 +268,10 @@ const AdminDiscussion = () => {
                         {msg.content}
                         {msg.image && (
                           <img
-                            src={`${API_BASE_URL}${msg.image}`}
+                            src={getImageUrl(msg.image)}
                             alt="uploaded"
                             className="chat-msg-image"
-                            onClick={() => window.open(`${API_BASE_URL}${msg.image}`, '_blank')}
+                            onClick={() => window.open(getImageUrl(msg.image), "_blank")}
                           />
                         )}
                       </div>

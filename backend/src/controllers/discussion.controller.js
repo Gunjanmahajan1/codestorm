@@ -46,7 +46,8 @@ exports.postMessage = async (req, res, next) => {
     let image = "";
 
     if (req.file) {
-      image = `/uploads/${req.file.filename}`;
+      // If it's Cloudinary, it will be the full URL. If local, it's just the filename.
+      image = req.file.path.startsWith("http") ? req.file.path : `/uploads/${req.file.filename}`;
     }
 
     if ((!content || !content.trim()) && !image) {

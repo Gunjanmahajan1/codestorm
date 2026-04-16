@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api, { API_BASE_URL } from "../services/api";
+import { getImageUrl } from "../utils/imageUrl";
 import "../styles/dashboard.css";
 
 const About = () => {
@@ -79,7 +80,7 @@ const About = () => {
                 }}
               >
                 <img
-                  src={`${API_BASE_URL}${img.imageUrl}`}
+                  src={getImageUrl(img.imageUrl)}
                   alt={`Slide ${index}`}
 
                   style={{

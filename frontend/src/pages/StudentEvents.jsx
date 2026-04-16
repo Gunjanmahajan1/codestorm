@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api, { API_BASE_URL } from "../services/api";
+import { getImageUrl } from "../utils/imageUrl";
 import "../styles/dashboard.css";
 import { FaTimes } from "react-icons/fa";
 
@@ -80,7 +81,7 @@ const StudentEvents = () => {
                 }}
               >
                 <img
-                  src={`${API_BASE_URL}${img.imageUrl}`}
+                  src={getImageUrl(img.imageUrl)}
                   alt={`Slide ${index}`}
                   style={{
                     width: "100%",
@@ -212,9 +213,9 @@ const StudentEvents = () => {
                     {event.images.map((img, index) => (
                       <img
                         key={index}
-                        src={`${API_BASE_URL}${img}`}
+                        src={getImageUrl(img)}
                         alt={`${event.title} ${index + 1}`}
-                        onClick={() => setSelectedImage(`${API_BASE_URL}${img}`)}
+                        onClick={() => setSelectedImage(getImageUrl(img))}
                         style={{
                           minWidth: "100%", // Take up full card width
                           scrollSnapAlign: "start", // Snap to start
@@ -228,9 +229,9 @@ const StudentEvents = () => {
                   </div>
                 ) : event.image ? (
                   <img
-                    src={`${API_BASE_URL}${event.image}`}
+                    src={getImageUrl(event.image)}
                     alt={event.title}
-                    onClick={() => setSelectedImage(`${API_BASE_URL}${event.image}`)}
+                    onClick={() => setSelectedImage(getImageUrl(event.image))}
                     style={{
                       width: "100%",
                       height: "200px", // Increased height
