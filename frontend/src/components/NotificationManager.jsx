@@ -29,29 +29,75 @@ const NotificationManager = () => {
     };
 
     const handleGrantPermission = async () => {
-        if (!('Notification' in window)) return;
+        console.log("🔔 [NotificationManager] Permission request triggered by user gesture");
         
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            await subscribeToPush();
-            setShowBanner(false);
+        if (!('Notification' in window)) {
+            console.error("❌ [NotificationManager] Browser does not support desktop notifications");
+            return;
+        }
+
+        if (!window.isSecureContext) {
+            console.error("❌ [NotificationManager] Notifications require a secure context (HTTPS or localhost)");
+            addToast("error", "Security Error", "Notifications require HTTPS or localhost to work.");
+            return;
+        }
+
+        try {
+            const permission = await Notification.requestPermission();
+            console.log("📊 [NotificationManager] Permission result:", permission);
+            
+            if (permission === 'granted') {
+                console.log("✅ [NotificationManager] Permission granted, subscribing...");
+                await subscribeToPush();
+                setShowBanner(false);
+            } else if (permission === 'denied') {
+                console.warn("🚫 [NotificationManager] Permission denied by user");
+                addToast("info", "Notifications Blocked", "Please enable notifications in your browser settings to receive updates.");
+                setShowBanner(false);
+            } else {
+                console.log("❓ [NotificationManager] Permission dismissed (default)");
+            }
+        } catch (error) {
+            console.error("❌ [NotificationManager] Error requesting permission:", error);
         }
     };
 
     const subscribeToPush = async () => {
         try {
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-            if (Notification.permission !== "granted") return;
+            console.log("🔄 [NotificationManager] Starting push subscription process...");
+            
+            if (!('serviceWorker' in navigator)) {
+                console.error("❌ [NotificationManager] Service Workers not supported");
+                return;
+            }
+            
+            if (!('PushManager' in window)) {
+                console.error("❌ [NotificationManager] Push API not supported");
+                return;
+            }
+
+            if (Notification.permission !== "granted") {
+                console.warn("⚠️ [NotificationManager] Cannot subscribe: permission not granted");
+                return;
+            }
             
             const token = localStorage.getItem("token");
-            if (!token) return;
+            if (!token) {
+                console.warn("⚠️ [NotificationManager] Cannot subscribe: No auth token found");
+                return;
+            }
 
+            console.log("⏳ [NotificationManager] Waiting for Service Worker to be ready...");
             const registration = await navigator.serviceWorker.ready;
+            console.log("✅ [NotificationManager] Service Worker ready:", registration.scope);
+
             let subscription = await registration.pushManager.getSubscription();
             
             if (!subscription) {
+                console.log("🛰️ [NotificationManager] No existing subscription found. Fetching public key...");
                 const { data } = await api.get("/api/notifications/public-key");
                 const publicKey = data.publicKey;
+                console.log("🔑 [NotificationManager] Public key received");
 
                 const urlBase64ToUint8Array = (base64String) => {
                     const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -64,29 +110,47 @@ const NotificationManager = () => {
                     return outputArray;
                 };
 
+                console.log("📡 [NotificationManager] Subscribing to push services...");
                 subscription = await registration.pushManager.subscribe({
                     userVisibleOnly: true,
                     applicationServerKey: urlBase64ToUint8Array(publicKey)
                 });
+                console.log("✅ [NotificationManager] Push subscription created");
+            } else {
+                console.log("✅ [NotificationManager] Existing push subscription found");
             }
 
+            console.log("📤 [NotificationManager] Syncing subscription with backend...");
             await api.post("/api/notifications/subscribe", { subscription });
-            console.log("✅ Push subscription synced with backend");
+            console.log("🚀 [NotificationManager] Push subscription synced successfully");
         } catch (error) {
-            console.error("❌ Failed to subscribe to push notifications", error);
+            console.error("❌ [NotificationManager] Failed to subscribe to push notifications", error);
+            // Check if error is related to service worker path
+            if (error.message && error.message.includes('ServiceWorker')) {
+                console.error("💡 [NotificationManager] Tip: Ensure /sw.js is accessible in your public folder");
+            }
         }
     };
 
     useEffect(() => {
+        console.log("🔍 [NotificationManager] Initializing...");
+        console.log("🔍 [NotificationManager] Current Permission Status:", Notification.permission);
+        console.log("🔍 [NotificationManager] Is Secure Context:", window.isSecureContext);
+
         // Only show banner if permission not set/denied and user is logged in
         const token = localStorage.getItem("token");
-        if (token && 'Notification' in window && Notification.permission === 'default') {
-            // Delay banner slightly for better UX
-            setTimeout(() => setShowBanner(true), 2000);
-        }
-        
-        if (token && Notification.permission === 'granted') {
-            subscribeToPush();
+        if (token && 'Notification' in window) {
+            if (Notification.permission === 'default') {
+                console.log("💡 [NotificationManager] Permission is default, showing banner in 2s...");
+                // Delay banner slightly for better UX
+                const timer = setTimeout(() => setShowBanner(true), 2000);
+                return () => clearTimeout(timer);
+            } else if (Notification.permission === 'denied') {
+                console.warn("⚠️ [NotificationManager] Notifications are blocked. User needs to manually enable them.");
+            } else if (Notification.permission === 'granted') {
+                console.log("✅ [NotificationManager] Notifications already granted. Subscribing...");
+                subscribeToPush();
+            }
         }
     }, []);
 
