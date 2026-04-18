@@ -1,12 +1,21 @@
 const webpush = require("web-push");
 const PushSubscription = require("../models/PushSubscription.model");
 
-// Configure web-push
-webpush.setVapidDetails(
-    process.env.EMAIL_VAPID_SUBJECT || "mailto:example@yourdomain.com",
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-);
+// Configure web-push defensively to prevent startup crash
+try {
+    if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+        webpush.setVapidDetails(
+            process.env.EMAIL_SUBJECT || "mailto:example@yourdomain.com",
+            process.env.VAPID_PUBLIC_KEY,
+            process.env.VAPID_PRIVATE_KEY
+        );
+        console.log("✅ Web-Push VAPID details configured.");
+    } else {
+        console.warn("⚠️ Web-Push VAPID keys missing. Push notifications will not work.");
+    }
+} catch (error) {
+    console.error("❌ Failed to set VAPID details:", error.message);
+}
 
 /**
  * Send a push notification to a specific user
