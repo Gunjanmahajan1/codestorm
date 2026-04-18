@@ -51,26 +51,17 @@ const AdminDiscussion = () => {
       if (editingId) {
         await api.put(`/api/discussion/${editingId}`, { content });
         setEditingId(null);
-        fetchMessages();
-      } else if (selectedFile) {
+      } else {
         const formData = new FormData();
         if (content.trim()) formData.append("content", content);
-        formData.append("image", selectedFile);
+        if (selectedFile) formData.append("image", selectedFile);
 
         await api.post("/api/discussion", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        fetchMessages();
-      } else {
-        if (socketRef.current) {
-          socketRef.current.emit("sendMessage", {
-            message: content,
-            userId: user?.id || user?._id,
-            role: user?.role
-          });
-        }
       }
 
+      fetchMessages();
       setContent("");
       setSelectedFile(null);
       setShowOptions(false);
@@ -105,12 +96,8 @@ const AdminDiscussion = () => {
   /* ---------------- TOGGLE DISCUSSION ---------------- */
   const toggleDiscussion = async () => {
     try {
-      if (socketRef.current) {
-        socketRef.current.emit("toggleDiscussion");
-      } else {
-        const res = await api.put("/api/discussion/toggle", {});
-        setEnabled(res.data.data.isEnabled);
-      }
+      const res = await api.put("/api/discussion/toggle", {});
+      setEnabled(res.data.data.isEnabled);
     } catch {
       alert("Toggle failed");
     }

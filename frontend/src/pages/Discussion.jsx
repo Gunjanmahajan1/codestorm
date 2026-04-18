@@ -45,25 +45,18 @@ const Discussion = () => {
             if (editingId) {
                 await api.put(`/api/discussion/${editingId}`, { content });
                 setEditingId(null);
-                fetchMessages();
-            } else if (selectedFile) {
+            } else {
                 const formData = new FormData();
                 if (content.trim()) formData.append("content", content);
-                formData.append("image", selectedFile);
+                if (selectedFile) formData.append("image", selectedFile);
+
+                // Use HTTP for all sends to ensure reliability on deployment platforms
                 await api.post("/api/discussion", formData, {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
-                fetchMessages();
-            } else {
-                if (socketRef.current) {
-                    socketRef.current.emit("sendMessage", {
-                        message: content,
-                        userId: user?.id || user?._id,
-                        role: user?.role
-                    });
-                }
             }
 
+            fetchMessages();
             setContent("");
             setSelectedFile(null);
             setShowOptions(false);
@@ -72,7 +65,7 @@ const Discussion = () => {
                 chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
             }, 100);
         } catch (err) {
-            console.error("Message send failed");
+            console.error("Message send failed", err);
         }
     };
 
