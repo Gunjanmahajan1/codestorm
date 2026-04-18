@@ -1,4 +1,5 @@
 const Contest = require("../models/Contest.model");
+const notificationService = require("../services/notification.service");
 
 /* ---------------- CREATE CONTEST (ADMIN) ---------------- */
 exports.createContest = async (req, res) => {
@@ -12,6 +13,16 @@ exports.createContest = async (req, res) => {
       success: true,
       message: "Contest created",
       data: contest,
+    });
+
+    // Broadcast push notification
+    notificationService.broadcastPushNotification({
+      title: `🏆 New Contest: ${contest.title}`,
+      body: `Join the new contest on ${new Date(contest.startTime).toLocaleDateString()}`,
+      data: { 
+        link: "/contests",
+        type: "contest"
+      }
     });
   } catch (error) {
     res.status(500).json({ message: "Create contest failed" });

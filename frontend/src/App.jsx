@@ -19,9 +19,12 @@ import Contests from "./pages/Contests";
 import AdminAbout from "./pages/AdminAbout";
 import { Navigate } from "react-router-dom";
 
+import NotificationManager from "./components/NotificationManager";
+
 function App() {
   return (
     <BrowserRouter>
+      <NotificationManager />
       <Navbar />
 
       <Routes>

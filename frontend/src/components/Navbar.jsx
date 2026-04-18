@@ -3,7 +3,6 @@ import logo from "../assets/codestorm_logo.png";
 import "../styles/dashboard.css";
 import { useEffect, useState, useRef } from "react";
 import api from "../services/api";
-
 const Navbar = () => {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [role, setRole] = useState(localStorage.getItem("role"));
@@ -15,117 +14,17 @@ const Navbar = () => {
   const adminMenuRef = useRef(null);
 
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
-  const lastMessageId = useRef(localStorage.getItem("lastMsgId"));
-  const lastEventId = useRef(localStorage.getItem("lastEventId"));
 
   useEffect(() => {
-    // Only update these if they actually changed in localStorage
     const storedToken = localStorage.getItem("token");
     if (storedToken !== token) setToken(storedToken);
-    
     const storedRole = localStorage.getItem("role");
     if (storedRole !== role) setRole(storedRole);
-    
     const storedUser = localStorage.getItem("user");
     const parsedUser = storedUser ? JSON.parse(storedUser) : null;
     if (JSON.stringify(parsedUser) !== JSON.stringify(user)) setUser(parsedUser);
-
-    setShowMobileMenu(false); // Close mobile menu on route change
+    setShowMobileMenu(false);
   }, [location]);
-
-  // Request notification permission once on mount or when permission is default
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, []);
-
-  // Global Notification Polling - optimized to only depend on token/user
-  useEffect(() => {
-    if (!token) return;
-
-    const checkNewMessages = async () => {
-      // Don't notify if already on discussion pages (checked INSIDE function to avoid dependency)
-      if (window.location.pathname === "/discussion" || window.location.pathname === "/admin/discussion") return;
-
-      try {
-        const res = await api.get("/api/discussion");
-        const messages = res.data.data || [];
-
-        if (messages.length > 0) {
-          const latestMsg = messages[messages.length - 1];
-          const currentUserId = user?.id || user?._id;
-
-          if (lastMessageId.current && latestMsg._id !== lastMessageId.current) {
-            if (latestMsg.author?._id !== currentUserId) {
-              if (Notification.permission === "granted") {
-                const notif = new Notification(`💬 New message from ${latestMsg.author?.name || "User"}`, {
-                  body: latestMsg.content || "Sent an image",
-                  icon: logo,
-                  badge: logo,
-                  tag: `msg-${latestMsg._id}`,
-                });
-                notif.onclick = () => {
-                  window.focus();
-                  navigate("/discussion");
-                };
-              }
-            }
-          }
-          lastMessageId.current = latestMsg._id;
-          localStorage.setItem("lastMsgId", latestMsg._id);
-        }
-      } catch (err) {
-        console.error("Global notification check failed", err);
-      }
-    };
-
-    const checkNewEvents = async () => {
-      try {
-        const res = await api.get("/api/events/public");
-        const events = res.data.data || res.data || [];
-
-        if (events.length > 0) {
-          const latestEvent = events[0];
-          if (!latestEvent?._id) return;
-
-          if (lastEventId.current && latestEvent._id !== lastEventId.current) {
-            if (Notification.permission === "granted") {
-              const notif = new Notification(`🚀 New Event: ${latestEvent.title}`, {
-                body: latestEvent.description
-                  ? latestEvent.description.substring(0, 100)
-                  : "A new event has been posted on CodeStorm!",
-                icon: logo,
-                badge: logo,
-                tag: `event-${latestEvent._id}`,
-              });
-              notif.onclick = () => {
-                window.focus();
-                scrollToSection("#events");
-              };
-            }
-          }
-          lastEventId.current = latestEvent._id;
-          localStorage.setItem("lastEventId", latestEvent._id);
-        }
-      } catch (err) {
-        console.error("Global event check failed", err);
-      }
-    };
-
-    // Initial checks
-    checkNewMessages();
-    checkNewEvents();
-
-    const msgInterval = setInterval(checkNewMessages, 20000); // 20s
-    const eventInterval = setInterval(checkNewEvents, 45000); // 45s
-
-    return () => {
-      clearInterval(msgInterval);
-      clearInterval(eventInterval);
-    };
-  }, [token, user]); // Removed location.pathname to prevent restart on every route change
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -142,7 +41,24 @@ const Navbar = () => {
     };
   }, []);
 
-  const logout = () => {
+  const logout = async () => {
+    // Unsubscribe from push notifications before clearing state/token
+    if ('serviceWorker' in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+          // Tell backend to remove this subscription
+          await api.post("/api/notifications/unsubscribe", { endpoint: subscription.endpoint });
+          // Unsubscribe on browser side
+          await subscription.unsubscribe();
+          console.log("✅ Unsubscribed from push notifications on logout");
+        }
+      } catch (err) {
+        console.error("❌ Failed to unsubscribe during logout:", err);
+      }
+    }
+
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("user");
@@ -190,7 +106,7 @@ const Navbar = () => {
         <span className="nav-link" onClick={() => scrollToSection("#contact")}>Contact Us</span>
         <Link to="/contests" onClick={() => setShowMobileMenu(false)}>Contests</Link>
         {role !== "admin" && <Link to="/discussion" onClick={() => setShowMobileMenu(false)}>Discussion</Link>}
-
+        
         {token && role === "admin" && (
           <div ref={adminMenuRef} className="admin-dropdown-container">
             {/* ADMIN BUTTON */}

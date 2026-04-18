@@ -1,4 +1,5 @@
 const Discussion = require("../models/Discussion.model");
+const notificationService = require("../services/notification.service");
 
 let discussionEnabled = true;
 
@@ -27,13 +28,27 @@ const discussionSocket = (io) => {
         if (!message || !userId) return;
 
         const newMessage = await Discussion.create({
-          message,
-          sentBy: userId,
+          content: message, // Assuming frontend sends 'message' but model uses 'content'
+          author: userId,
           role,
         });
 
-        io.to("discussion-room").emit("newMessage", newMessage);
+        const populatedMessage = await Discussion.findById(newMessage._id).populate("author", "name role");
+
+        io.to("discussion-room").emit("newMessage", populatedMessage);
+
+        // Send push notifications to everyone subscribed
+        notificationService.broadcastPushNotification({
+          title: `💬 ${populatedMessage.author?.name || "User"}`,
+          body: populatedMessage.content || "Shared a message",
+          data: { 
+            link: "/discussion",
+            type: "message"
+          }
+        });
+
       } catch (error) {
+        console.error("Failed to send message:", error);
         socket.emit("errorMessage", {
           message: "Failed to send message",
         });

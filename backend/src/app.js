@@ -63,6 +63,7 @@ const contactRoutes = require("./routes/contact.routes");
 const discussionRoutes = require("./routes/discussion.routes");
 const socialRoutes = require("./routes/social.routes");
 const externalContestRoutes = require("./routes/externalContest.routes");
+const notificationRoutes = require("./routes/notification.routes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
@@ -76,6 +77,7 @@ app.use("/api/core-team", require("./routes/coreTeam.routes"));
 app.use("/api/about-slider", require("./routes/aboutSlider.routes"));
 app.use("/api/about-content", require("./routes/aboutContent.routes"));
 app.use("/api/events-slider", require("./routes/eventSlider.routes"));
+app.use("/api/notifications", notificationRoutes);
 /* -------------------- HEALTH CHECK -------------------- */
 
 app.get("/", (req, res) => {

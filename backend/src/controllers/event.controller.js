@@ -2,6 +2,7 @@ const Event = require("../models/Event.model");
 const jwtService = require("../services/jwt.service");
 const fs = require('fs');
 const path = require('path');
+const notificationService = require("../services/notification.service");
 
 /* -------------------- CREATE EVENT -------------------- */
 exports.createEvent = async (req, res, next) => {
@@ -15,6 +16,16 @@ exports.createEvent = async (req, res, next) => {
       success: true,
       message: "Event created successfully",
       data: event,
+    });
+
+    // Broadcast push notification
+    notificationService.broadcastPushNotification({
+      title: `🚀 New Event: ${event.title}`,
+      body: event.description ? event.description.substring(0, 100) : "Check out the newest event!",
+      data: { 
+        link: "/events",
+        type: "event"
+      }
     });
   } catch (error) {
     next(error);

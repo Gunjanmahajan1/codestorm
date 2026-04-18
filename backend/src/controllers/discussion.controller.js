@@ -1,5 +1,6 @@
 const Discussion = require("../models/Discussion.model");
 const DiscussionSetting = require("../models/DiscussionSetting.model");
+const notificationService = require("../services/notification.service");
 
 /* -------------------- GET MESSAGES -------------------- */
 exports.getMessages = async (req, res, next) => {
@@ -68,6 +69,16 @@ exports.postMessage = async (req, res, next) => {
       success: true,
       message: "Message posted",
       data: message,
+    });
+
+    // Broadcast push notification
+    notificationService.broadcastPushNotification({
+      title: `💬 ${req.user.name}`,
+      body: content || "Sent an image",
+      data: { 
+        link: "/discussion",
+        type: "message"
+      }
     });
   } catch (error) {
     next(error);
