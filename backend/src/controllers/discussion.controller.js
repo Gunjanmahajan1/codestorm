@@ -65,11 +65,19 @@ exports.postMessage = async (req, res, next) => {
       role: req.user.role,
     });
 
+    const populatedMessage = await Discussion.findById(message._id).populate("author", "name role");
+
     res.status(201).json({
       success: true,
       message: "Message posted",
-      data: message,
+      data: populatedMessage,
     });
+
+    // Broadcast socket event
+    const io = req.app.get("socketio");
+    if (io) {
+      io.to("discussion-room").emit("newMessage", populatedMessage);
+    }
 
     // Broadcast push notification
     notificationService.broadcastPushNotification({

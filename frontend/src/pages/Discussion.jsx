@@ -125,7 +125,10 @@ const Discussion = () => {
         socketRef.current = io(API_BASE_URL, { reconnection: true });
         socketRef.current.on("connect", () => socketRef.current.emit("joinDiscussion"));
         socketRef.current.on("newMessage", (msg) => {
-            setMessages((prev) => [...prev, msg]);
+            setMessages((prev) => {
+                if (prev.some(m => m._id === msg._id)) return prev;
+                return [...prev, msg];
+            });
             setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
         });
         socketRef.current.on("discussionStatus", (status) => setDiscussionEnabled(status));

@@ -17,6 +17,9 @@ const io = new Server(server, {
 // Initialize Sockets
 discussionSocket(io);
 
+// Expose io for controllers
+app.set("socketio", io);
+
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () => {

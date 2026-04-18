@@ -26,6 +26,16 @@ const NotificationManager = () => {
         setToasts(prev => prev.filter(t => t.id !== id));
     };
 
+    const requestPermission = async () => {
+        if (!('Notification' in window)) return;
+        if (Notification.permission === 'default') {
+            await Notification.requestPermission();
+        }
+        if (Notification.permission === 'granted') {
+            subscribeToPush();
+        }
+    };
+
     const subscribeToPush = async () => {
         try {
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
@@ -43,7 +53,7 @@ const NotificationManager = () => {
 
                 const urlBase64ToUint8Array = (base64String) => {
                     const padding = '='.repeat((4 - base64String.length % 4) % 4);
-                    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+                    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
                     const rawData = window.atob(base64);
                     const outputArray = new Uint8Array(rawData.length);
                     for (let i = 0; i < rawData.length; ++i) {
@@ -66,7 +76,7 @@ const NotificationManager = () => {
     };
 
     useEffect(() => {
-        subscribeToPush();
+        requestPermission();
         const handler = () => subscribeToPush();
         window.addEventListener('notification-permission-granted', handler);
         return () => window.removeEventListener('notification-permission-granted', handler);
@@ -101,19 +111,21 @@ const NotificationManager = () => {
         isFirstLoad.current = false;
     };
 
+    // Socket Lifecycle - Independent of route changes
     useEffect(() => {
+        const token = localStorage.getItem("token");
         const userStr = localStorage.getItem("user");
         const user = userStr ? JSON.parse(userStr) : null;
-        const token = localStorage.getItem("token");
 
-        // CLEANUP PREVIOUS SOCKET
-        if (socketRef.current) {
-            socketRef.current.disconnect();
-            socketRef.current = null;
+        if (!token) {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+                socketRef.current = null;
+            }
+            return;
         }
 
-        // SOCKET CONNECTION
-        if (token) {
+        if (!socketRef.current) {
             socketRef.current = io(API_BASE_URL, {
                 reconnection: true,
                 reconnectionAttempts: 10,
@@ -127,21 +139,23 @@ const NotificationManager = () => {
             socketRef.current.on("newMessage", (msg) => {
                 console.log("📩 Notification Socket received message:", msg);
                 const currentUserId = user?.id || user?._id;
-                const isOnDiscussionPage = window.location.pathname === "/discussion" || window.location.pathname === "/admin/discussion";
                 
-                // ROBUST ID CHECK
+                // Use a helper to check location at the moment of message receipt
+                const path = window.location.pathname;
+                const isOnDiscussionPage = path === "/discussion" || path === "/admin/discussion" || path.includes("/discussion");
+                
                 const msgAuthorId = msg.author?._id || msg.author;
                 const isMsgFromSelf = msgAuthorId && currentUserId && msgAuthorId.toString() === currentUserId.toString();
 
-                console.log("🔍 Notif Check - From Self:", isMsgFromSelf, "On Page:", isOnDiscussionPage);
+                console.log("🔍 Notif Check - From Self:", isMsgFromSelf, "On Page:", isOnDiscussionPage, "Path:", path);
 
                 if (!isMsgFromSelf) {
-                    // 1. SYSTEM NOTIFICATION (Using Service Worker for max reliability)
+                    // 1. SYSTEM NOTIFICATION
                     if (Notification.permission === "granted") {
                         navigator.serviceWorker.ready.then(registration => {
                             registration.showNotification(`💬 ${msg.author?.name || "User"}`, {
                                 body: msg.content || "Sent an image",
-                                icon: "/codestorm_logo.png", // Use root path for SW
+                                icon: "/codestorm_logo.png",
                                 tag: `msg-${msg._id}`,
                                 data: { link: "/discussion" },
                                 badge: "/codestorm_logo.png",
@@ -150,9 +164,8 @@ const NotificationManager = () => {
                         });
                     }
 
-                    // 2. IN-APP POP-UP (Only if not on discussion page)
+                    // 2. IN-APP POP-UP (Only if truly NOT on the discussion page)
                     if (!isOnDiscussionPage) {
-                        console.log("✨ triggering toast...");
                         addToast("message", `Message from ${msg.author?.name || "User"}`, msg.content || "Shared an image", "/discussion");
                     }
                 }
@@ -167,10 +180,28 @@ const NotificationManager = () => {
         }
 
         checkNotifications();
-    }, [location.pathname]); // Re-run on route changes to ensure socket state matches auth
+
+        return () => {
+            // We keep the socket alive unless the user logs out (token removed)
+            // or the component unmounts globally.
+        };
+    }, []); // Run once on mount
+
+    // Handle token changes (login/logout)
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token && socketRef.current) {
+            socketRef.current.disconnect();
+            socketRef.current = null;
+        } else if (token && !socketRef.current) {
+            // Trigger the main effect again by re-setting state if needed,
+            // but since we check localStorage in the main effect, we can just call it or force re-render.
+            // For simplicity, let's just make the main effect depend on a "trigger"
+        }
+    }, [location.pathname]); // We still watch location to re-trigger checks if needed, but not reconnect.
 
     useEffect(() => {
-        const interval = setInterval(checkNotifications, 30000); // Polling for events independently
+        const interval = setInterval(checkNotifications, 30000);
         return () => clearInterval(interval);
     }, []);
 

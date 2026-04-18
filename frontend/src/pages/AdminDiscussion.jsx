@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { io } from "socket.io-client";
 import api from "../services/api";
 import { FaPaperPlane, FaCheck, FaTrash, FaLock, FaUnlock, FaPlus, FaCamera, FaImage, FaTimes } from "react-icons/fa";
 import { API_BASE_URL } from "../services/api";
@@ -17,6 +18,7 @@ const AdminDiscussion = () => {
   const chatEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+  const socketRef = useRef(null);
 
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
@@ -49,20 +51,30 @@ const AdminDiscussion = () => {
       if (editingId) {
         await api.put(`/api/discussion/${editingId}`, { content });
         setEditingId(null);
-      } else {
+        fetchMessages();
+      } else if (selectedFile) {
         const formData = new FormData();
         if (content.trim()) formData.append("content", content);
-        if (selectedFile) formData.append("image", selectedFile);
+        formData.append("image", selectedFile);
 
         await api.post("/api/discussion", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        fetchMessages();
+      } else {
+        if (socketRef.current) {
+          socketRef.current.emit("sendMessage", {
+            message: content,
+            userId: user?.id || user?._id,
+            role: user?.role
+          });
+        }
       }
 
       setContent("");
       setSelectedFile(null);
       setShowOptions(false);
-      fetchMessages();
+      
       setTimeout(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
@@ -93,8 +105,12 @@ const AdminDiscussion = () => {
   /* ---------------- TOGGLE DISCUSSION ---------------- */
   const toggleDiscussion = async () => {
     try {
-      const res = await api.put("/api/discussion/toggle", {});
-      setEnabled(res.data.data.isEnabled);
+      if (socketRef.current) {
+        socketRef.current.emit("toggleDiscussion");
+      } else {
+        const res = await api.put("/api/discussion/toggle", {});
+        setEnabled(res.data.data.isEnabled);
+      }
     } catch {
       alert("Toggle failed");
     }
@@ -149,55 +165,34 @@ const AdminDiscussion = () => {
     fetchMessages();
     fetchSettings();
 
-    const interval = setInterval(() => {
-      fetchMessages();
-      fetchSettings();
-    }, 5000);
+    socketRef.current = io(API_BASE_URL, { reconnection: true });
+    socketRef.current.on("connect", () => {
+      socketRef.current.emit("joinDiscussion");
+    });
+    
+    socketRef.current.on("newMessage", (msg) => {
+      setMessages((prev) => {
+        if (prev.some(m => m._id === msg._id)) return prev;
+        return [...prev, msg];
+      });
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    });
 
-    return () => clearInterval(interval);
-  }, []);
+    socketRef.current.on("discussionStatus", (status) => {
+      setEnabled(status);
+    });
 
-  useEffect(() => {
     const handleClick = () => {
       setOpenMenuId(null);
       setShowOptions(false);
     };
     document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+
+    return () => {
+      if (socketRef.current) socketRef.current.disconnect();
+      document.removeEventListener("click", handleClick);
+    };
   }, []);
-
-  /* ---------------- NOTIFICATIONS ---------------- */
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, []);
-
-  const lastMessageId = useRef(null);
-  const isFirstLoad = useRef(true);
-
-  useEffect(() => {
-    if (messages.length > 0) {
-      const latestMsg = messages[messages.length - 1];
-      const currentUserId = user?.id || user?._id;
-
-      if (!isFirstLoad.current && lastMessageId.current && latestMsg._id !== lastMessageId.current) {
-        // New message arrived
-        if (latestMsg.author?._id !== currentUserId && document.visibilityState !== "visible") {
-          if (Notification.permission === "granted") {
-            new Notification(`New message from ${latestMsg.author?.name || "User"}`, {
-              body: latestMsg.content || "Sent an image",
-              icon: "/favicon.ico",
-            });
-          }
-        }
-      }
-
-      lastMessageId.current = latestMsg._id;
-      localStorage.setItem("lastMsgId", latestMsg._id);
-      isFirstLoad.current = false;
-    }
-  }, [messages, user]);
 
   const initialLoadDone = useRef(false);
   useEffect(() => {
