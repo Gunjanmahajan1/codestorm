@@ -15,6 +15,8 @@ const NotificationManager = () => {
     const isFirstLoad = useRef(true);
     const socketRef = useRef(null);
 
+    const [showBanner, setShowBanner] = useState(false);
+
     // Toast Management
     const addToast = (type, title, message, link) => {
         const id = Date.now();
@@ -26,13 +28,13 @@ const NotificationManager = () => {
         setToasts(prev => prev.filter(t => t.id !== id));
     };
 
-    const requestPermission = async () => {
+    const handleGrantPermission = async () => {
         if (!('Notification' in window)) return;
-        if (Notification.permission === 'default') {
-            await Notification.requestPermission();
-        }
-        if (Notification.permission === 'granted') {
-            subscribeToPush();
+        
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            await subscribeToPush();
+            setShowBanner(false);
         }
     };
 
@@ -76,10 +78,16 @@ const NotificationManager = () => {
     };
 
     useEffect(() => {
-        requestPermission();
-        const handler = () => subscribeToPush();
-        window.addEventListener('notification-permission-granted', handler);
-        return () => window.removeEventListener('notification-permission-granted', handler);
+        // Only show banner if permission not set/denied and user is logged in
+        const token = localStorage.getItem("token");
+        if (token && 'Notification' in window && Notification.permission === 'default') {
+            // Delay banner slightly for better UX
+            setTimeout(() => setShowBanner(true), 2000);
+        }
+        
+        if (token && Notification.permission === 'granted') {
+            subscribeToPush();
+        }
     }, []);
 
     const checkNotifications = async () => {
@@ -90,17 +98,17 @@ const NotificationManager = () => {
                 const latestEvent = events[0];
                 
                 if (!isFirstLoad.current && lastEventId.current && latestEvent._id !== lastEventId.current) {
+                    addToast("event", "New Event Update!", latestEvent.title, "/events");
+                    // System notification if granted
                     if (Notification.permission === "granted") {
-                        navigator.serviceWorker.ready.then(registration => {
-                            registration.showNotification(`🚀 New Event: ${latestEvent.title}`, {
+                        navigator.serviceWorker.ready.then(reg => {
+                            reg.showNotification(`🚀 New Event: ${latestEvent.title}`, {
                                 body: latestEvent.description ? latestEvent.description.substring(0, 100) : "Check out the newest event!",
                                 icon: "/codestorm_logo.png",
-                                tag: `event-${latestEvent._id}`,
                                 data: { link: "/events" },
                             });
                         });
                     }
-                    addToast("event", "New Event Update!", latestEvent.title, "/events");
                 }
                 lastEventId.current = latestEvent._id;
                 localStorage.setItem("lastEventId", latestEvent._id);
@@ -111,7 +119,7 @@ const NotificationManager = () => {
         isFirstLoad.current = false;
     };
 
-    // Socket Lifecycle - Independent of route changes
+    // Socket Lifecycle
     useEffect(() => {
         const token = localStorage.getItem("token");
         const userStr = localStorage.getItem("user");
@@ -137,68 +145,41 @@ const NotificationManager = () => {
             });
 
             socketRef.current.on("newMessage", (msg) => {
-                console.log("📩 Notification Socket received message:", msg);
                 const currentUserId = user?.id || user?._id;
-                
-                // Use a helper to check location at the moment of message receipt
                 const path = window.location.pathname;
                 const isOnDiscussionPage = path === "/discussion" || path === "/admin/discussion" || path.includes("/discussion");
                 
                 const msgAuthorId = msg.author?._id || msg.author;
                 const isMsgFromSelf = msgAuthorId && currentUserId && msgAuthorId.toString() === currentUserId.toString();
 
-                console.log("🔍 Notif Check - From Self:", isMsgFromSelf, "On Page:", isOnDiscussionPage, "Path:", path);
-
                 if (!isMsgFromSelf) {
-                    // 1. SYSTEM NOTIFICATION
+                    // 1. SYSTEM NOTIFICATION (Only if visible and on another page, or tab in background)
                     if (Notification.permission === "granted") {
                         navigator.serviceWorker.ready.then(registration => {
-                            registration.showNotification(`💬 ${msg.author?.name || "User"}`, {
-                                body: msg.content || "Sent an image",
-                                icon: "/codestorm_logo.png",
-                                tag: `msg-${msg._id}`,
-                                data: { link: "/discussion" },
-                                badge: "/codestorm_logo.png",
-                                vibrate: [100, 50, 100],
-                            });
+                            // Only show system notification if not looking at the discussion
+                            if (!isOnDiscussionPage || document.visibilityState !== 'visible') {
+                                registration.showNotification(`💬 ${msg.author?.name || "User"}`, {
+                                    body: msg.content || "Sent an image",
+                                    icon: "/codestorm_logo.png",
+                                    tag: `msg-${msg._id}`,
+                                    data: { link: "/discussion" },
+                                    badge: "/codestorm_logo.png",
+                                    vibrate: [100, 50, 100],
+                                });
+                            }
                         });
                     }
 
-                    // 2. IN-APP POP-UP (Only if truly NOT on the discussion page)
+                    // 2. IN-APP POP-UP
                     if (!isOnDiscussionPage) {
                         addToast("message", `Message from ${msg.author?.name || "User"}`, msg.content || "Shared an image", "/discussion");
                     }
                 }
-                
-                lastMsgId.current = msg._id;
-                localStorage.setItem("lastMsgId", msg._id);
-            });
-            
-            socketRef.current.on("connect_error", (err) => {
-                console.error("🔴 Notification Socket Connection Error:", err);
             });
         }
 
         checkNotifications();
-
-        return () => {
-            // We keep the socket alive unless the user logs out (token removed)
-            // or the component unmounts globally.
-        };
-    }, []); // Run once on mount
-
-    // Handle token changes (login/logout)
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token && socketRef.current) {
-            socketRef.current.disconnect();
-            socketRef.current = null;
-        } else if (token && !socketRef.current) {
-            // Trigger the main effect again by re-setting state if needed,
-            // but since we check localStorage in the main effect, we can just call it or force re-render.
-            // For simplicity, let's just make the main effect depend on a "trigger"
-        }
-    }, [location.pathname]); // We still watch location to re-trigger checks if needed, but not reconnect.
+    }, [location.pathname]);
 
     useEffect(() => {
         const interval = setInterval(checkNotifications, 30000);
@@ -206,26 +187,96 @@ const NotificationManager = () => {
     }, []);
 
     return (
-        <div style={{
-            position: "fixed",
-            top: "80px", // Below navbar
-            right: "20px",
-            zIndex: 99999,
-            pointerEvents: "none" // Allow clicks through container
-        }}>
-            <div style={{ pointerEvents: "auto" }}>
-                <AnimatePresence>
-                    {toasts.map(toast => (
-                        <NotificationToast 
-                            key={toast.id} 
-                            toast={toast} 
-                            onClose={removeToast} 
-                        />
-                    ))}
-                </AnimatePresence>
+        <>
+            {/* Permission Banner */}
+            <AnimatePresence>
+                {showBanner && (
+                    <div style={{
+                        position: "fixed",
+                        bottom: "20px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        zIndex: 100000,
+                        width: "90%",
+                        maxWidth: "400px",
+                        background: "rgba(15, 23, 42, 0.95)",
+                        backdropFilter: "blur(10px)",
+                        border: "1px solid rgba(34, 197, 94, 0.3)",
+                        padding: "16px",
+                        borderRadius: "12px",
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
+                        color: "white",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px"
+                    }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <img src="/codestorm_logo.png" alt="logo" style={{ width: "32px", height: "32px" }} />
+                            <div>
+                                <h4 style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>Enable Notifications?</h4>
+                                <p style={{ margin: 0, fontSize: "12px", color: "rgba(255,255,255,0.7)" }}>Get updates and new messages even when out.</p>
+                            </div>
+                        </div>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                            <button 
+                                onClick={handleGrantPermission}
+                                style={{
+                                    flex: 1,
+                                    background: "#22c55e",
+                                    color: "black",
+                                    border: "none",
+                                    padding: "8px",
+                                    borderRadius: "6px",
+                                    fontSize: "12px",
+                                    fontWeight: "bold",
+                                    cursor: "pointer"
+                                }}
+                            >
+                                Enable
+                            </button>
+                            <button 
+                                onClick={() => setShowBanner(false)}
+                                style={{
+                                    flex: 1,
+                                    background: "rgba(255,255,255,0.1)",
+                                    color: "white",
+                                    border: "none",
+                                    padding: "8px",
+                                    borderRadius: "6px",
+                                    fontSize: "12px",
+                                    cursor: "pointer"
+                                }}
+                            >
+                                Later
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Toast Container */}
+            <div style={{
+                position: "fixed",
+                top: "80px",
+                right: "20px",
+                zIndex: 99999,
+                pointerEvents: "none"
+            }}>
+                <div style={{ pointerEvents: "auto" }}>
+                    <AnimatePresence>
+                        {toasts.map(toast => (
+                            <NotificationToast 
+                                key={toast.id} 
+                                toast={toast} 
+                                onClose={removeToast} 
+                            />
+                        ))}
+                    </AnimatePresence>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
 export default NotificationManager;
+
